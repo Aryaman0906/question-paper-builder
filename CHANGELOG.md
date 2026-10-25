@@ -1,5 +1,13 @@
 # Project updates
 
+## 0.5.1 — Windows PDF/backup saving fix
+
+- Fix `[Errno 9] Bad file descriptor` reported by the user on both PDF export and database backup.
+- Open the completed temporary file as `r+b` before fsync. Windows requires write access; existing bytes remain intact.
+- The shared fix also covers pre-restore recovery backups; no schema or dependency changes.
+- Reproduced four failures with a Windows-style writable-handle regression guard before the fix; all 171 tests pass after it.
+- Windows GUI retest is pending; the build environment remains Linux.
+
 ## Phase 5 — PDF export and database backup/restore (30–31 October objectives)
 
 Implemented on 25 October 2026. Version 0.5.0.

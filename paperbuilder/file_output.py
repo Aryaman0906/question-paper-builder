@@ -16,7 +16,9 @@ def staged_output(destination, overwrite=False):
     reservation = None
     try:
         yield temporary
-        with temporary.open('rb') as stream:
+        # Windows _commit/FlushFileBuffers requires a writable handle.
+        # r+b retains all bytes produced by the PDF/SQLite writer (unlike wb).
+        with temporary.open('r+b') as stream:
             os.fsync(stream.fileno())
         if not overwrite:
             # Reserve exclusively; works on Windows and removable drives without hard links.

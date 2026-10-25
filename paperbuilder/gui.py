@@ -21,7 +21,7 @@ class Application:
         self.repo = repository
         self.paper = None
         self.paper_saved = False
-        root.title('Question Paper Builder | PDF export and backups 0.5')
+        root.title('Question Paper Builder | PDF export and backups 0.5.1')
         root.geometry('1160x760'); root.minsize(850, 620)
         style = ttk.Style(root)
         if 'clam' in style.theme_names(): style.theme_use('clam')
@@ -280,7 +280,7 @@ Ctrl+1 Home, Ctrl+2 Question bank, Ctrl+3 Paper setup.
 Use Tab / Shift+Tab to move through controls.
 
 VERSION
-0.5.0 — PDF export and backups. ReportLab is needed only for PDF export.
+0.5.1 — PDF export and backups. ReportLab is needed only for PDF export.
 
 SAVED PAPERS
 Save paper stores the blueprint, ordered questions, answers and marking guidance.

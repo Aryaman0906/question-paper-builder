@@ -1,11 +1,17 @@
 # Question Paper Builder
 
-**Version 0.5.0 — Phase 5: PDF export and database backup/restore**
+**Version 0.5.1 — Phase 5: PDF export and database backup/restore**
 
 Aryaman Kundra · Roll number 2445591  
 Assigned project: Question Paper Generation & Difficulty Balancing System
 
 This release implements the **30–31 October** checklist objectives, prepared on 25 October. It adds separate printable student/teacher PDFs and validated database backup/restore. The existing Tkinter workflow is retained. Final Windows acceptance, observed user testing, visual polish and the submission report remain to be completed.
+
+## Windows saving fix (0.5.1)
+
+Version 0.5.0 could fail both PDF export and database backup with `[Errno 9] Bad file descriptor` on Windows. The shared output helper flushed a read-only file handle. Version 0.5.1 opens it read/write without truncating the finished output. This also fixes the recovery-copy step used during restore. Download the updated code and restart the app; no database migration or dependency reinstall is required. The title bar shows 0.5.1.
+
+Seven new regression tests cover writable flushing, both PDF exports, database backup/restore recovery and failure cleanup. The prior Linux-only tests missed Windows' write-access requirement. The new tests enforce that requirement on Linux; they are not a substitute for the pending Windows retest.
 
 ## Start on Windows
 
@@ -135,7 +141,7 @@ py -3.12 main.py --db .\practice.sqlite3
 
 `--check` validates the example blueprint. `--generate-demo` prints a complete demo snapshot as JSON, including teacher answers; it is not a student export. These modes are mutually exclusive. Exit codes: 0 success, 1 availability failure, 2 invalid input or startup/database/display error.
 
-**164 automated tests passed on Python 3.12.14**, with ReportLab 4.4.9 and PDF verification dependencies installed. The new checks cover PDF audience separation, page bounds, indentation, literal markup, missing dependencies, backup integrity, WAL snapshots, cancelled restores, rollback after partial restore and recovery copies. Sample PDFs were rendered and inspected: 2 student pages and 4 teacher pages. Source compilation and GUI imports passed.
+**171 automated tests passed on Python 3.12.14**, with ReportLab 4.4.9 and PDF verification dependencies installed. The new checks cover PDF audience separation, page bounds, indentation, literal markup, missing dependencies, backup integrity, WAL snapshots, cancelled restores, rollback after partial restore and recovery copies. Sample PDFs were rendered and inspected: 2 student pages and 4 teacher pages. Source compilation and GUI imports passed.
 
 The user confirmed the main Phase 3 and Phase 4 workflows on Windows. New Phase 5 native dialogs have not been visually tested in this display-less build environment. Windows export/printing/restore interaction and scaling still require manual checks. User satisfaction has not been formally measured. PDF tests skip if development dependencies are absent; install `requirements-dev.txt` to run the full suite. See `docs/TEST_RESULTS.md`.
 

@@ -6,7 +6,7 @@ Date: 25 October 2026. Runtime: Python 3.12.14. Platform: Linux build environmen
 python -m unittest discover -s tests -v
 ```
 
-**Result: 164 tests passed (114 prior tests, 23 backup/restore tests, 18 PDF tests and 9 Phase 5 headless controller tests).**
+**Result: 171 tests passed (114 prior tests, 23 backup/restore tests, 18 PDF tests, 9 Phase 5 headless controller tests and 7 file-output regression tests).**
 
 | Area | Verified behavior |
 |---|---|
@@ -140,3 +140,14 @@ Source compilation, GUI-module import and CLI smoke checks passed. No Phase 5 na
 - [ ] Check buttons, file dialogs, keyboard navigation and 125%/150% display scaling.
 
 Formal completion-time/ease/satisfaction targets remain unmeasured. Complex-script PDFs, visual redesign and submission materials remain outside this implementation.
+
+
+## 0.5.1 regression: Windows bad file descriptor
+
+The user reported PDF export and backup failures on Windows with errno 9. The shared helper reopened its completed temporary file as `rb` before `os.fsync`. Python uses Windows `_commit`; the underlying buffer flush requires a writable handle. Reopening as `r+b` grants write access without truncating the completed PDF/database.
+
+A regression guard performs a zero-byte write on the descriptor before the real fsync, enforcing write access without changing content. Before the fix, four tests reproduced errno 9 (plain publication, overwrite, PDF exports and backup/recovery). After the fix, all 171 tests pass. Genuine flush/publication failures still preserve prior files and clean up temporary files/reservations. Native Windows retest remains pending; no claim of a real Windows test run is made.
+
+References:
+- https://docs.python.org/3.12/library/os.html#os.fsync
+- https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers
