@@ -1,4 +1,4 @@
-# Phase 3 verification record
+# Phase 4 verification record
 
 Date: 25 October 2026. Runtime: Python 3.12.14. Platform: Linux build environment.
 
@@ -6,7 +6,7 @@ Date: 25 October 2026. Runtime: Python 3.12.14. Platform: Linux build environmen
 python -m unittest discover -s tests -v
 ```
 
-**Result: 75 tests passed (16 foundations, 31 Phase 2, 28 Phase 3).**
+**Result: 114 tests passed (16 foundations, 31 Phase 2, 28 Phase 3, 29 Phase 4 service tests, 10 headless controller tests).**
 
 | Area | Verified behavior |
 |---|---|
@@ -40,11 +40,29 @@ Source compilation, GUI imports, standalone sample availability, sample CSV prev
 
 Source compilation, GUI-module imports and command-line demo generation passed. No native window was rendered.
 
-## Desktop acceptance checklist — not yet executed
+## Phase 4 automated evidence
+
+- Save/restart/reopen produces equal snapshots and identical student/teacher preview text.
+- Bank edits, archives and missing bank records cannot change saved content.
+- Repeated saves, including another connection, are idempotent; changed content under an existing ID is rejected.
+- SQL update protection, injected insert failure and database lock recovery preserve data and permit retry.
+- Missing/corrupt snapshots, invalid envelopes, duplicate JSON fields and metadata mismatch are rejected.
+- Revisions have new IDs, retain parent IDs and preserve the original; sibling and nested revisions stay separate.
+- Every demo slot has only exact matching, unused alternatives; replacing any slot preserves totals/order/uniqueness.
+- Direct replacement of a saved paper is blocked. Revision replacement saves separately.
+- Edited, archived or re-reviewed candidates after preview are rejected until refreshed.
+- Production excludes demo, draft and archived alternatives. No alternatives never relaxes constraints.
+- Headless controller tests verify unsaved paper preservation on bank/setup edits, cancelled open/generation/close, failed open/save/generation, and saved-versus-unsaved close behavior. These do not render widgets.
+
+## User-confirmed Phase 3 Windows evidence — 25 October 2026
+
+The user supplied screenshots of the running seven-tab application, then pasted matching student/key output for 13 unique questions and 40 marks (Easy 12, Medium 20, Hard 8; units 18/22). The user also confirmed a saved blueprint loaded after restarting. This establishes that workflow on their machine, not all controls or all edge cases. The downloaded batch launcher was blocked by Smart App Control; terminal launch with Python 3.12 was the instructed alternative.
+
+## Desktop acceptance checklist — remaining checks
 
 This build environment has no display server, so native Tk windows were **not** launched or visually tested. HTML sketches are historical design references, not screenshots. Before demonstrating or submitting, test on the intended Windows laptop:
 
-- [ ] Launch via `run_windows.bat`; all seven tabs render with no traceback.
+- [x] Phase 3 launch and seven tabs rendered on the user’s Windows computer. Batch launcher remains subject to Smart App Control; terminal launch is documented.
 - [ ] Add one Short answer, one Coding and one MCQ question; inspect multiline indentation and reload after restart.
 - [ ] Submit empty required fields and invalid marks; errors are clear and typed entries remain.
 - [ ] Switch question type and check MCQ controls/answers save correctly.
@@ -61,16 +79,33 @@ This build environment has no display server, so native Tk windows were **not** 
 Observe two representative users completing add, approve, archive/restore, valid CSV import and invalid CSV recovery. Record elapsed time, independent completion, errors, help requests and a 1–5 ease/satisfaction score. Targets: both complete each task without developer intervention; no data loss; average ease and satisfaction at least 4/5. These are project targets, not claims of standardized usability certification. Fix blocking problems and repeat affected tasks. Keep a record in the final report.
 
 
-## Phase 3 desktop checks — pending
+## Phase 3 desktop checks — partially confirmed
 
 - [ ] Enter metadata/targets/instructions; add/edit/remove and move rows, including the first/last row boundaries.
-- [ ] Save a template, restart, reload it and compare all rows and instructions. Save an edited copy without changing the first copy.
+- [x] User confirmed saving and reloading a blueprint after restart.
+- [ ] Compare every saved row/instruction and verify saving an edited copy preserves the first.
 - [ ] Load a demo or blank blueprint with unsaved edits; Cancel keeps the edits.
-- [ ] With the bundled bank, production mode reports shortages. Demo mode produces 13 questions/40 marks and visible demo labels.
-- [ ] Switch between student and teacher tabs; student question text has no answer/rubric/correct-option metadata.
+- [x] User confirmed demo generation with 13 questions, 40 marks and expected balance.
+- [ ] Confirm production mode reports shortages with a demo-only bank.
+- [x] User pasted separate student/key previews; student text contains no teacher metadata.
 - [ ] Type an invalid seed, invalid percentage or inconsistent marks; errors preserve inputs and block generation.
-- [ ] Change setup/seed/mode or locally edit a bank record; stale preview and availability are cleared.
+- [ ] Phase 4 behavior: setup/seed/mode/bank changes clear availability but preserve the independent paper in Review.
 - [ ] Close with dirty row/editor/blueprint or a generated preview; declining the relevant discard dialog preserves work.
 - [ ] Verify small-window layout, all buttons, scrollbars, Tab/Shift+Tab and 125%/150% Windows scaling.
 
 The earlier user-satisfaction targets remain pending; no positive usability result is claimed.
+
+
+## Phase 4 desktop acceptance — pending on Windows
+
+- [ ] Replace a question after comparing both dialog tabs. Check only that question changes and 13/40, difficulty and unit totals remain exact.
+- [ ] Save, restart, reopen and compare both previews including code indentation.
+- [ ] Create a revision, replace a question, save; original and revision reopen independently and show distinct IDs/parent linkage.
+- [ ] Edit/archive a selected bank question; original saved student/key content stays unchanged.
+- [ ] Open a replacement dialog, alter that candidate in a second app copy, then Apply: reject stale content and retain paper.
+- [ ] Test no-alternatives explanation; Apply remains disabled.
+- [ ] Decline discarding an unsaved paper/revision when opening/generating another or closing; work remains.
+- [ ] Edit setup while a paper is open: Review stays unchanged; new generation uses the new setup.
+- [ ] Verify history vertical/horizontal scrolling, keyboard selection, replacement dialog buttons and 125%/150% scaling.
+
+User satisfaction and Phase 4 visual acceptance have not been measured. PDF export/backup are not implemented yet.

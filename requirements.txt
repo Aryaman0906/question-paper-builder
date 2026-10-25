@@ -1,3 +1,3 @@
-# Version 0.3 uses only the Python standard library.
+# Version 0.4 uses only the Python standard library.
 # Python 3.12+ with Tkinter is recommended.
 # ReportLab will be added with PDF export in the later milestone.

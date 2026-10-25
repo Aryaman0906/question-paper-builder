@@ -8,7 +8,7 @@ from paperbuilder.validation import availability
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Question Paper Builder 0.3 blueprints and generation')
+    parser = argparse.ArgumentParser(description='Question Paper Builder 0.4 saved papers and revisions')
     parser.add_argument('--db', type=Path, help='Optional demo database location')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--generate-demo', action='store_true', help='Generate a checked demo paper as JSON without opening a window')

@@ -1,8 +1,8 @@
-# Implementation contracts — Phase 3
+# Implementation contracts — Phase 4
 
 ## Layers
 
-`main.py` opens the local question database and GUI. `gui.py` contains presentation and navigation. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access, bank mutations and migrations. `question_bank.py` contains bank/editor/import widgets, and `csv_import.py` owns CSV parsing and preview. All GUI writes use repository services. `blueprint_gui.py` edits templates, `blueprints.py` persists new copies, and `generation.py` selects and independently validates papers. Later, add `papers.py` and `pdf_export.py` without moving selection logic into widget callbacks.
+`main.py` opens the local question database and GUI. `gui.py` contains presentation and navigation. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access, bank mutations and migrations. `question_bank.py` contains bank/editor/import widgets, and `csv_import.py` owns CSV parsing and preview. All GUI writes use repository services. `blueprint_gui.py` edits templates, `blueprints.py` persists new copies, and `generation.py` selects and independently validates papers. `papers.py` owns snapshot persistence, revisions and replacement; `paper_gui.py` owns history and replacement widgets. `pdf_export.py` remains planned. Selection and persistence rules stay outside widget callbacks.
 
 ## Database model
 
@@ -11,7 +11,7 @@
 | questions | id | Question content, labels, answer/rubric and review state | Create/edit/approve/archive, validated atomic import, sample seeding and reads |
 | blueprints | id | Exam metadata and difficulty targets | Validated save/load services; every save creates a new template |
 | blueprint_rows | blueprint_id, position | Ordered section and selection requirements | Ordered row editing and atomic template persistence |
-| papers | id | Full immutable saved-paper snapshot | Schema/immutability trigger; save/reopen service pending |
+| papers | id | Full immutable saved-paper snapshot | Validated atomic saves, exact reopen, immutable revisions and history |
 
 `blueprint_rows.blueprint_id` references `blueprints.id` with cascading deletion. Foreign keys are explicitly enabled for each connection. Question selection uses an index on subject, unit, kind, marks, difficulty and status. A partial unique index rejects repeated prompt hashes among active questions in the same subject.
 
@@ -33,11 +33,19 @@ Question prompt hashing normalizes Unicode and line endings and strips only oute
 
 SQL constraints enforce basic scalar invariants; application validation enforces complete MCQs and cross-field rules. Import and bank mutation services call the same validator before writing.
 
-### Snapshot contract for the later paper service
+### Saved snapshot contract
 
-`snapshot_json` will contain `schema_version`, `paper_id`, exam metadata, instructions, ordered sections, the complete blueprint, ordered question snapshots (ID, text, marks, labels, options, answer, rubric), achieved difficulty/unit totals, generation time, app version and optional random seed. A snapshot must pass the independent validator before saving. Do not rebuild it from live question IDs or seed values. A changed saved paper becomes a new record/revision.
+Snapshot schema version 1 stores `paper_id`, `created_at` (timezone-aware ISO date/time), `app_version`, original 63-bit integer `seed`, `is_demo`, full `blueprint`, ordered `items` and recomputed `summary`. Each item includes its number, blueprint row index, section and complete question record including answers and rubrics. Optional `parent_paper_id` identifies a revision; optional `replacement_count` counts replacements across its lineage (default zero).
 
-Phase 3 creates in-memory JSON-compatible snapshots with full selected questions and validates their selection constraints. The `papers` table save/reopen service remains scheduled for Phase 4. The existing SQL trigger does not validate arbitrary JSON.
+Saving deep-copies and validates the complete selection plus envelope, then inserts under `BEGIN IMMEDIATE`. Repeating an identical save is idempotent; reusing an ID for different content fails. JSON serialization is deterministic and rejects nonfinite values. Reading rejects malformed JSON, duplicate fields, nonfinite numbers, unsupported schema versions, invalid selections and mismatches between SQL metadata and JSON. SQL's update trigger is an additional overwrite guard, not a JSON validator or an access-control system.
+
+Reopen never joins the live question bank or reruns a seed. Editing/archiving a question cannot change an old paper. Historical questions retain their original eligibility state, including when saving or revising an older snapshot. Saving does not constitute current teacher approval. `create_revision` loads a saved parent and returns an unsaved new UUID copy. Save checks the parent exists and retains its blueprint, mode and original seed. Revisions commit as independent rows; there is no paper delete/update UI in this milestone.
+
+### Compatible replacement
+
+A candidate must be currently eligible in the paper's mode and match `(subject, unit, kind, marks, difficulty)`. Exclude all IDs used anywhere in the paper. The dialog displays full candidate content; Apply re-reads the bank and requires the exact previewed record, including its revision, to still be available. No candidates means no replacement. A changed preview is rejected rather than silently substituting newly edited content.
+
+Replacement copies the working paper, changes only the selected question and replacement count, then independently validates counts, order, marks, uniqueness and summary. It writes nothing to the database. Saved IDs cannot be replaced directly: create an unsaved revision first. An initial seed cannot reproduce later replacements; the snapshot is authoritative.
 
 ## Blueprint and eligibility rules
 
@@ -102,4 +110,4 @@ Generation copies inputs, deduplicates identical IDs (rejecting conflicting reco
 
 A separate validator recomputes question counts, IDs, row order, selection fields, eligibility, difficulty marks, unit totals and summary from the selected items. No partial paper is returned on failure. Student text uses an explicit selection of fields (prompt, options, marks and exam metadata); teacher text adds answers, rubrics, IDs and difficulty. Both have an explicit demo banner when demo mode was selected.
 
-Changing local setup, mode, seed or bank content clears the temporary GUI preview. Cross-process changes are not live-subscribed; every generation takes a fresh bank read, and existing copied preview text remains unchanged. Saving templates does not save generated papers. JSON command output includes answers and must be treated as teacher data.
+Changing local setup, mode, seed or bank content invalidates availability but preserves the independent paper snapshot in Review. Opening/generating another paper prompts before discarding an unsaved working copy. A failed open/save/generation preserves it. Close prompts for unsaved paper or blueprint changes. Saved papers are read-only until a new revision is created. Cross-process changes are not live-subscribed; generation/replacement take fresh bank reads. Saving templates does not save papers; Save paper is explicit. JSON command output and stored snapshots include teacher answers.

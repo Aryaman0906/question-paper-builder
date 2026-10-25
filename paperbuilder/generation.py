@@ -138,7 +138,7 @@ def preview_text(paper, teacher=False):
     lines += [bp['title'], bp['subject'], f'Time: {bp["duration_minutes"]} minutes | Marks: {bp["total_marks"]}',
               bp.get('instructions',''), '']
     if teacher:
-        lines += ['TEACHER ANSWER KEY', f'Seed: {paper["seed"]}', '']
+        lines += ['TEACHER ANSWER KEY', f'Generation seed: {paper["seed"]} (before any replacements)', f'Replacements: {paper.get("replacement_count", 0)}', '']
     last_section = None
     for item in paper['items']:
         q = item['question']
@@ -152,5 +152,9 @@ def preview_text(paper, teacher=False):
                       'Answer: '+q['answer'], 'Marking guidance: '+q['rubric']]
         lines.append('')
     if teacher:
-        lines += ['BALANCE BY MARKS', str(paper['summary'])]
+        summary = paper['summary']
+        lines += ['BALANCE BY MARKS',
+                  f"Total: {summary['total_marks']} marks | Questions: {summary['question_count']}",
+                  ' | '.join(f"{d}: {summary['difficulty_marks'][d]} marks" for d in DIFFICULTIES),
+                  ' | '.join(f"{u}: {m} marks" for u, m in sorted(summary['unit_marks'].items()))]
     return '\n'.join(lines)

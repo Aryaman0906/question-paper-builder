@@ -1,5 +1,19 @@
 # Project updates
 
+## Phase 4 — Replacement, saved papers and revisions (28–29 October objectives)
+
+Implemented on 25 October 2026. Version 0.4.0.
+
+- Added exact compatible replacement with current-bank rechecking and candidate previews.
+- Added atomic, retry-safe snapshot saves and saved-paper history in existing schema version 2.
+- Added read-only reopening and new revision copies with parent IDs; saved content is never overwritten.
+- Validate snapshot envelopes and stored metadata; reject corrupted, unsupported and mismatched records.
+- Preserve working papers during bank/setup changes and protect unsaved work when switching or closing.
+- Render deterministic, readable balance summaries so reopen preserves both previews exactly.
+- Expanded tests from 75 to 114, including replacement races, restart equality and unsaved-work boundaries.
+- User confirmed Phase 3 launch/generation/template persistence on Windows. Phase 4 visual interaction and satisfaction checks remain pending.
+- PDF export, backup/restore and visual redesign remain later work.
+
 ## Phase 3 — Editable blueprints and balanced generation (26–27 October objectives)
 
 Implemented on 25 October 2026.
