@@ -2,7 +2,7 @@
 import sqlite3
 import tkinter as tk
 from tkinter import ttk, messagebox
-from tkinter.scrolledtext import ScrolledText
+from .ui import ScrolledText, stripe_tree, decorate_text
 from .papers import list_papers, replacement_candidates, replace_question
 from .storage import BankError
 
@@ -27,16 +27,17 @@ class ReplacementDialog(tk.Toplevel):
         self.title(f'Replace question {number}'); self.transient(parent)
         self.geometry('780x650'); self.minsize(560, 440)
         box = ttk.Frame(self, padding=14); box.pack(fill='both', expand=True)
+        box.columnconfigure(0,weight=1);box.rowconfigure(1,weight=1)
         ttk.Label(box, text='Only unused eligible questions with the same subject, unit, type, marks and difficulty appear.',
-                  wraplength=710).pack(anchor='w', pady=(0,8))
-        tabs = ttk.Notebook(box); tabs.pack(fill='both', expand=True)
+                  wraplength=710).grid(row=0,column=0,sticky='ew',pady=(0,8))
+        tabs = ttk.Notebook(box); tabs.grid(row=1,column=0,sticky='nsew')
         self.views = []
         for label in ('Current question', 'Replacement preview'):
             frame = ttk.Frame(tabs); tabs.add(frame, text=label)
-            view = ScrolledText(frame, wrap='word', font=('Consolas', 10))
+            view = ScrolledText(frame, height=10, wrap='word', font=('Consolas', 10))
             view.pack(fill='both', expand=True); self.views.append(view)
         self.show(self.views[0], question_text(paper['items'][number-1]['question']))
-        row = ttk.Frame(box); row.pack(fill='x', pady=8)
+        row = ttk.Frame(box); row.grid(row=2,column=0,sticky='ew',pady=8)
         ttk.Label(row, text='Replacement ID').pack(side='left')
         self.choice = tk.StringVar()
         combo = ttk.Combobox(row, textvariable=self.choice, values=list(self.candidates), state='readonly')
@@ -44,9 +45,9 @@ class ReplacementDialog(tk.Toplevel):
         combo.bind('<<ComboboxSelected>>', lambda _: self.preview())
         self.tabs = tabs
         self.error = tk.StringVar(value=f'{len(candidates)} compatible alternatives.')
-        ttk.Label(box, textvariable=self.error, wraplength=710).pack(anchor='w', pady=5)
-        controls = ttk.Frame(box); controls.pack(fill='x')
-        self.apply_button = ttk.Button(controls, text='Apply replacement', command=self.apply, state='disabled')
+        ttk.Label(box, textvariable=self.error, wraplength=710).grid(row=3,column=0,sticky='ew',pady=5)
+        controls = ttk.Frame(box); controls.grid(row=4,column=0,sticky='ew')
+        self.apply_button = ttk.Button(controls, text='Apply replacement', style='Primary.TButton', command=self.apply, state='disabled')
         self.apply_button.pack(side='right')
         ttk.Button(controls, text='Cancel', command=self.destroy).pack(side='left')
         if candidates:
@@ -58,6 +59,7 @@ class ReplacementDialog(tk.Toplevel):
     @staticmethod
     def show(view, text):
         view.configure(state='normal'); view.delete('1.0', 'end'); view.insert('1.0', text); view.configure(state='disabled')
+        decorate_text(view)
 
     def preview(self):
         self.show(self.views[1], question_text(self.candidates[self.choice.get()]))
@@ -78,10 +80,11 @@ class HistoryPanel(ttk.Frame):
         ttk.Label(self, text='Saved papers are exact, read-only snapshots. Create a revision to replace questions without changing the original.',
                   wraplength=900).pack(anchor='w', pady=(0,10))
         table = ttk.Frame(self); table.pack(fill='both', expand=True)
+        table.configure(width=680,height=340);table.grid_propagate(False)
         columns = ('title', 'mode', 'created', 'id')
         self.tree = ttk.Treeview(table, columns=columns, show='headings', selectmode='browse')
-        for name, heading, width in zip(columns, ('Title', 'Mode', 'Created (UTC)', 'Paper ID'), (300, 100, 220, 300)):
-            self.tree.heading(name, text=heading); self.tree.column(name, width=width, minwidth=80)
+        for name, heading, width in zip(columns, ('Title', 'Mode', 'Created (UTC)', 'Paper ID'), (320, 120, 210, 300)):
+            self.tree.heading(name, text=heading, anchor='w'); self.tree.column(name, width=width, minwidth=80)
         y = ttk.Scrollbar(table, orient='vertical', command=self.tree.yview)
         x = ttk.Scrollbar(table, orient='horizontal', command=self.tree.xview)
         self.tree.configure(yscrollcommand=y.set, xscrollcommand=x.set)
@@ -89,7 +92,7 @@ class HistoryPanel(ttk.Frame):
         table.rowconfigure(0,weight=1); table.columnconfigure(0,weight=1)
         controls = ttk.Frame(self); controls.pack(fill='x', pady=10)
         ttk.Button(controls, text='Refresh history', command=self.refresh).pack(side='left')
-        self.open_button = ttk.Button(controls, text='Open paper', command=lambda:self.open(False), state='disabled')
+        self.open_button = ttk.Button(controls, text='Open paper', style='Primary.TButton', command=lambda:self.open(False), state='disabled')
         self.open_button.pack(side='left', padx=8)
         self.revision_button = ttk.Button(controls, text='Create revision', command=lambda:self.open(True), state='disabled')
         self.revision_button.pack(side='left')
@@ -112,10 +115,11 @@ class HistoryPanel(ttk.Frame):
         self.tree.delete(*self.tree.get_children())
         for r in rows:
             self.tree.insert('', 'end', iid=r['id'], values=(r['title'], 'DEMO ONLY' if r['is_demo'] else 'Production', r['created_at'], r['id']))
+        stripe_tree(self.tree)
         if selected and self.tree.exists(selected):
             self.tree.selection_set(selected); self.tree.see(selected)
         self.selection_changed()
-        self.status.set(f'{len(rows)} saved papers. Revisions appear as separate entries; open one to see its parent ID. Open a paper to export its student PDF or teacher key from Review.')
+        self.status.set(('No saved papers yet. Generate a paper and choose Save paper in Paper studio.' if not rows else f'{len(rows)} saved papers. Revisions appear as separate entries; open one to see its parent ID. Open a paper to export its student PDF or teacher key from Paper studio.'))
 
     def open(self, revision):
         selection = self.tree.selection()

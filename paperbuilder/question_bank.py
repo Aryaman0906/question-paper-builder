@@ -5,7 +5,7 @@ import sqlite3
 import uuid
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
-from tkinter.scrolledtext import ScrolledText
+from .ui import ScrolledText, ScrollPage, stripe_tree, decorate_text
 from .storage import BankError
 from .validation import KINDS, DIFFICULTIES
 from .csv_import import read_preview, commit_preview, save_template
@@ -16,6 +16,7 @@ def display_text(widget, text):
     widget.delete('1.0','end')
     widget.insert('1.0',text)
     widget.configure(state='disabled')
+    decorate_text(widget)
 
 
 class QuestionEditor(tk.Toplevel):
@@ -33,10 +34,11 @@ class QuestionEditor(tk.Toplevel):
         body.columnconfigure(0,weight=1);body.rowconfigure(1,weight=1)
         ttk.Label(body,text='Save complete question content as a draft. Any content change requires review again.',wraplength=730).grid(row=0,column=0,sticky='w',pady=(0,10))
         self.tabs = ttk.Notebook(body);self.tabs.grid(row=1,column=0,sticky='nsew')
-        metadata=ttk.Frame(self.tabs,padding=15)
-        content=ttk.Frame(self.tabs,padding=12)
-        options=ttk.Frame(self.tabs,padding=15)
-        self.tabs.add(metadata,text='Details'); self.tabs.add(content,text='Question and answer'); self.tabs.add(options,text='MCQ options')
+        self.editor_pages = [ScrollPage(self.tabs) for _ in range(3)]
+        metadata, content, options = [page.body for page in self.editor_pages]
+        for page, title in zip(self.editor_pages, ('Details', 'Question and answer', 'MCQ options')):
+            page.body.configure(padding=12); self.tabs.add(page, text=title)
+        self.bind('<FocusIn>', lambda event: [page.reveal(event.widget) for page in self.editor_pages], add='+')
         self.vars = {};self.widgets={}
         defaults = dict(id='Q-'+uuid.uuid4().hex[:12],subject='Python Programming',unit='',topic='',kind='Short answer',marks='2',difficulty='Easy')
         if question:
@@ -76,7 +78,7 @@ class QuestionEditor(tk.Toplevel):
         self.error=tk.StringVar()
         ttk.Label(body,textvariable=self.error,foreground='#9b2d20',wraplength=720).grid(row=2,column=0,sticky='ew',pady=(10,4))
         controls=ttk.Frame(body);controls.grid(row=3,column=0,sticky='ew')
-        ttk.Button(controls,text='Save question',command=self.save).pack(side='right')
+        ttk.Button(controls,text='Save question',style='Primary.TButton',command=self.save).pack(side='right')
         ttk.Button(controls,text='Cancel',command=self.cancel).pack(side='right',padx=8)
         self.original = self.raw_state()
         self.grab_set();self.widgets['subject'].focus_set()
@@ -139,11 +141,12 @@ class ImportDialog(tk.Toplevel):
         self.transient(parent.winfo_toplevel())
         self.bind('<Escape>',lambda _:self.destroy())
         body=ttk.Frame(self,padding=15);body.pack(fill='both',expand=True)
+        body.columnconfigure(0,weight=1);body.rowconfigure(3,weight=3);body.rowconfigure(4,weight=2)
         self.filename=tk.StringVar(value=self.path.name)
-        ttk.Label(body,textvariable=self.filename).pack(anchor='w')
-        ttk.Label(body,text='Every row must pass. The exact preview will be imported as drafts; existing records are never overwritten.',wraplength=900).pack(anchor='w',pady=(5,8))
-        self.summary=tk.StringVar();ttk.Label(body,textvariable=self.summary,wraplength=900).pack(anchor='w',pady=5)
-        frame=ttk.Frame(body);frame.pack(fill='both',expand=True)
+        ttk.Label(body,textvariable=self.filename).grid(row=0,column=0,sticky='w')
+        ttk.Label(body,text='Every row must pass. The exact preview will be imported as drafts; existing records are never overwritten.',wraplength=900).grid(row=1,column=0,sticky='ew',pady=(5,8))
+        self.summary=tk.StringVar();ttk.Label(body,textvariable=self.summary,wraplength=900).grid(row=2,column=0,sticky='ew',pady=5)
+        frame=ttk.Frame(body);frame.grid(row=3,column=0,sticky='nsew')
         cols=('line','id','status','prompt','errors')
         self.tree=ttk.Treeview(frame,columns=cols,show='headings',height=10,selectmode='browse')
         for name,label,width in zip(cols,('End line','ID','Status','Question','Errors'),(65,140,75,300,300)):
@@ -154,10 +157,10 @@ class ImportDialog(tk.Toplevel):
         self.tree.grid(row=0,column=0,sticky='nsew');scrollbar.grid(row=0,column=1,sticky='ns');horizontal.grid(row=1,column=0,sticky='ew')
         frame.rowconfigure(0,weight=1);frame.columnconfigure(0,weight=1)
         self.tree.bind('<<TreeviewSelect>>',self.show_row)
-        self.detail=ScrolledText(body,height=8,wrap='word',font=('Consolas',10),state='disabled');self.detail.pack(fill='both',expand=True,pady=10)
-        buttons=ttk.Frame(body);buttons.pack(fill='x')
+        self.detail=ScrolledText(body,height=8,wrap='word',font=('Consolas',10),state='disabled');self.detail.grid(row=4,column=0,sticky='nsew',pady=10)
+        buttons=ttk.Frame(body);buttons.grid(row=5,column=0,sticky='ew')
         ttk.Button(buttons,text='Reload file',command=self.reload).pack(side='left')
-        self.commit_button=ttk.Button(buttons,text='Import all as drafts',command=self.commit,state='disabled');self.commit_button.pack(side='right')
+        self.commit_button=ttk.Button(buttons,text='Import all as drafts',style='Primary.TButton',command=self.commit,state='disabled');self.commit_button.pack(side='right')
         ttk.Button(buttons,text='Cancel',command=self.destroy).pack(side='right',padx=8)
         self.grab_set();self.reload()
 
@@ -173,6 +176,7 @@ class ImportDialog(tk.Toplevel):
         self.summary.set(f'{len(p.rows)} records: {len(p.rows)-invalid} ready, {invalid} with errors. No database changes yet.')
         for i,r in enumerate(p.rows):
             self.tree.insert('','end',iid=str(i),values=(r.line,r.question.get('id',''), 'Error' if r.errors else 'Ready',r.question.get('prompt','').replace('\n',' '),' '.join(r.errors)))
+        stripe_tree(self.tree)
         display_text(self.detail,'\n'.join(p.errors) if p.errors else 'Select a row for its complete preview. End line is the physical CSV line where that record ends; multiline cells can span several lines.')
         if p.ready:self.commit_button.configure(state='normal')
 
@@ -205,39 +209,46 @@ class BankPanel(ttk.Frame):
         super().__init__(parent);self.pack(fill='both',expand=True)
         self.repo=repository;self.visible={};self.editor=None;self.on_change=on_change
         top=ttk.Frame(self);top.pack(fill='x')
-        ttk.Label(top,text='Search').pack(side='left')
-        self.query=tk.StringVar();search=ttk.Entry(top,textvariable=self.query,width=34);search.pack(side='left',padx=8)
+        ttk.Label(top,text='Find a question',style='Section.TLabel').pack(side='left')
+        self.query=tk.StringVar();search=ttk.Entry(top,textvariable=self.query,width=18);search.pack(side='left',padx=8)
         ttk.Button(top,text='Clear filters',command=self.clear_filters).pack(side='left')
         ttk.Button(top,text='Refresh',command=self.refresh).pack(side='left',padx=8)
+        ttk.Button(top,text='+ Add question',style='Primary.TButton',command=self.add).pack(side='right')
         filters=ttk.Frame(self);filters.pack(fill='x',pady=(8,10))
         self.filters={};self.combos={}
         specifications=(('subject','Subject',('All subjects',)),('unit','Unit',('All units',)),
                         ('review','Review',('All reviews','Draft','Approved','Demo reviewed')),
                         ('active','Show',('Active','Archived','All records')))
-        for key,label,values in specifications:
-            ttk.Label(filters,text=label).pack(side='left',padx=(0,4))
+        for column,(key,label,values) in enumerate(specifications):
+            filters.columnconfigure(column,weight=1,uniform='filters')
+            group=ttk.Frame(filters);group.grid(row=0,column=column,sticky='ew',padx=(0,12))
+            ttk.Label(group,text=label,style='Muted.TLabel').pack(anchor='w',pady=(0,5))
             var=tk.StringVar(value=values[0]);self.filters[key]=var
-            combo=ttk.Combobox(filters,textvariable=var,values=values,state='readonly',width=16 if key=='subject' else 13)
-            combo.pack(side='left',padx=(0,10));self.combos[key]=combo
+            combo=ttk.Combobox(group,textvariable=var,values=values,state='readonly',width=16 if key=='subject' else 13)
+            combo.pack(fill='x');self.combos[key]=combo
             combo.bind('<<ComboboxSelected>>',lambda _:self.refresh())
         self.query.trace_add('write',lambda *_:self.refresh())
-        table=ttk.Frame(self);table.pack(fill='both',expand=True)
+        split=ttk.Panedwindow(self,orient='vertical');split.pack(fill='both',expand=True)
+        upper=ttk.Frame(split);lower=ttk.Frame(split);split.add(upper,weight=3);split.add(lower,weight=2)
+        table=ttk.Frame(upper);table.pack(fill='both',expand=True)
+        # Let the table's own horizontal scrollbar handle its wide columns.
+        table.configure(width=680,height=250);table.grid_propagate(False)
         cols=('id','subject','unit','kind','marks','difficulty','review','prompt')
-        self.tree=ttk.Treeview(table,columns=cols,show='headings',selectmode='browse',height=7)
-        for key,width in zip(cols,(145,140,95,110,55,80,115,360)):
-            self.tree.heading(key,text=key.title());self.tree.column(key,width=width,minwidth=45,stretch=key=='prompt')
+        self.tree=ttk.Treeview(table,columns=cols,show='headings',selectmode='browse',height=6,displaycolumns=('id','prompt','marks','difficulty','review','unit','kind','subject'))
+        for key,width in zip(cols,(100,150,100,120,65,95,150,330)):
+            self.tree.heading(key,text='Question' if key=='prompt' else key.title(),anchor='w');self.tree.column(key,width=width,minwidth=45,stretch=key=='prompt')
         y=ttk.Scrollbar(table,orient='vertical',command=self.tree.yview);x=ttk.Scrollbar(table,orient='horizontal',command=self.tree.xview)
         self.tree.configure(yscrollcommand=y.set,xscrollcommand=x.set)
         self.tree.grid(row=0,column=0,sticky='nsew');y.grid(row=0,column=1,sticky='ns');x.grid(row=1,column=0,sticky='ew')
         table.rowconfigure(0,weight=1);table.columnconfigure(0,weight=1)
         self.tree.bind('<<TreeviewSelect>>',self.show_question);self.tree.bind('<Double-1>',lambda _:self.edit())
-        self.count=tk.StringVar();ttk.Label(self,textvariable=self.count).pack(anchor='w',pady=4)
-        self.detail=ScrolledText(self,height=8,wrap='word',font=('Consolas',10),state='disabled');self.detail.pack(fill='both',expand=True)
+        self.count=tk.StringVar();ttk.Label(upper,textvariable=self.count,style='Muted.TLabel').pack(anchor='w',pady=6)
+        ttk.Label(lower,text='Question details',style='Section.TLabel').pack(anchor='w',pady=(8,6))
+        self.detail=ScrolledText(lower,height=6,wrap='word',font=('Consolas',10),state='disabled');self.detail.pack(fill='both',expand=True)
         controls=ttk.Frame(self);controls.pack(fill='x',pady=(10,4))
-        ttk.Button(controls,text='Add question',command=self.add).pack(side='left',padx=(0,5))
         self.edit_button=ttk.Button(controls,text='Edit',command=self.edit,state='disabled');self.edit_button.pack(side='left',padx=(0,5))
-        self.approve_button=ttk.Button(controls,text='Approve',command=self.approve,state='disabled');self.approve_button.pack(side='left',padx=(0,5))
-        self.archive_button=ttk.Button(controls,text='Archive',command=self.archive,state='disabled');self.archive_button.pack(side='left',padx=(0,5))
+        self.approve_button=ttk.Button(controls,text='Approve',style='Primary.TButton',command=self.approve,state='disabled');self.approve_button.pack(side='left',padx=(0,5))
+        self.archive_button=ttk.Button(controls,text='Archive',style='Danger.TButton',command=self.archive,state='disabled');self.archive_button.pack(side='left',padx=(0,5))
         ttk.Button(controls,text='Import CSV',command=self.import_csv).pack(side='left',padx=(0,5))
         ttk.Button(controls,text='Save CSV template',command=self.template).pack(side='left')
         self.status=tk.StringVar(value='New and imported questions start as drafts. Content edits require review again.')
@@ -267,11 +278,13 @@ class BankPanel(ttk.Frame):
             haystack=' '.join(str(q[field]) for field in ('id','subject','unit','topic','prompt')).casefold()
             if self.query.get().casefold() not in haystack:continue
             self.visible[q['id']]=q
-            review=q['review_status'].replace('_',' ')+(' · demo' if q['is_demo'] else '')
+            review={'draft':'Draft','approved':'Approved','demo_reviewed':'Demo reviewed'}[q['review_status']]
+            if q['is_demo'] and q['review_status']!='demo_reviewed':review+=' · demo'
             self.tree.insert('','end',iid=q['id'],values=(q['id'],q['subject'],q['unit'],q['kind'],q['marks'],q['difficulty'],review,q['prompt'].replace('\n',' ')))
+        stripe_tree(self.tree)
         self.count.set(f'{len(self.visible)} shown · {sum(q["active"] for q in questions)} active · {sum(not q["active"] for q in questions)} archived')
         for button in (self.edit_button,self.approve_button,self.archive_button):button.configure(state='disabled')
-        display_text(self.detail,'Select a question to read its prompt, model answer, marking guidance and review status.')
+        display_text(self.detail,'Select a question above to read its full text, model answer and marking guidance.' if self.visible else 'No questions match these filters. Clear filters to see your bank, or add a new question.')
         if select in self.visible:
             self.tree.selection_set(select);self.tree.see(select);self.show_question()
         if message:

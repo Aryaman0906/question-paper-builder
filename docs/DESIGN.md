@@ -1,8 +1,8 @@
-# Implementation contracts — Phase 5
+# Implementation contracts — 0.6.0
 
 ## Layers
 
-`main.py` opens the local question database and GUI. `gui.py` contains presentation and navigation. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access, bank mutations and migrations. `question_bank.py` contains bank/editor/import widgets, and `csv_import.py` owns CSV parsing and preview. All GUI writes use repository services. `blueprint_gui.py` edits templates, `blueprints.py` persists new copies, and `generation.py` selects and independently validates papers. `papers.py` owns snapshot persistence, revisions and replacement; `paper_gui.py` owns history and replacement widgets. `pdf_export.py` renders audience-specific PDF fields, `file_output.py` stages output, and `backups.py`/`backup_gui.py` implement validated backup/restore. Selection and persistence rules stay outside widget callbacks.
+`main.py` opens the local question database and GUI. `gui.py` contains presentation and sidebar navigation. `ui.py` provides the shared ttk palette, font selection, scrollable pages, table striping and presentation-only text tags. It does not read or write project data. See `GUI_REDESIGN.md` for the visual design and acceptance scope. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access, bank mutations and migrations. `question_bank.py` contains bank/editor/import widgets, and `csv_import.py` owns CSV parsing and preview. All GUI writes use repository services. `blueprint_gui.py` edits templates, `blueprints.py` persists new copies, and `generation.py` selects and independently validates papers. `papers.py` owns snapshot persistence, revisions and replacement; `paper_gui.py` owns history and replacement widgets. `pdf_export.py` renders audience-specific PDF fields, `file_output.py` stages output, and `backups.py`/`backup_gui.py` implement validated backup/restore. Selection and persistence rules stay outside widget callbacks.
 
 ## Database model
 

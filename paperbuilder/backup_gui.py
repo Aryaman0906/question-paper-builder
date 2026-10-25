@@ -18,13 +18,14 @@ class BackupDialog(tk.Toplevel):
         self.repo, self.parent = repository, parent
         self.title('Backup and restore'); self.transient(parent); self.resizable(False, False)
         box = ttk.Frame(self, padding=18); box.pack(fill='both', expand=True)
+        ttk.Label(box,text='Protect your workspace',style='Heading.TLabel').pack(anchor='w',pady=(0,16))
         ttk.Label(box, text='Database: ' + str(repository.path.resolve()), wraplength=600).pack(anchor='w', pady=(0,12))
         ttk.Label(box, text='Backups contain saved questions, templates, papers and teacher answers. Unsaved paper or blueprint edits are not included.',
                   wraplength=600).pack(anchor='w', pady=(0,12))
-        ttk.Button(box, text='Create database backup', command=self.backup).pack(anchor='w', pady=6)
+        ttk.Button(box, text='Create database backup', style='Primary.TButton', command=self.backup).pack(anchor='w', pady=6)
         ttk.Label(box, text='Restore replaces the current database contents; it does not merge them. Close other copies of the app first. A recovery copy is created automatically. After a successful restore this app closes; reopen it to use the restored data.',
                   wraplength=600).pack(anchor='w', pady=12)
-        ttk.Button(box, text='Choose backup to restore', command=self.restore).pack(anchor='w', pady=6)
+        ttk.Button(box, text='Choose backup to restore', style='Danger.TButton', command=self.restore).pack(anchor='w', pady=6)
         self.status = tk.StringVar()
         ttk.Label(box, textvariable=self.status, wraplength=600).pack(anchor='w', pady=12)
         ttk.Button(box, text='Close', command=self.destroy).pack(anchor='e')

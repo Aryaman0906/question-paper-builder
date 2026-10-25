@@ -1,17 +1,30 @@
 # Question Paper Builder
 
-**Version 0.5.1 — Phase 5: PDF export and database backup/restore**
+**Version 0.6.0 — Redesigned desktop workspace**
 
 Aryaman Kundra · Roll number 2445591  
 Assigned project: Question Paper Generation & Difficulty Balancing System
 
-This release implements the **30–31 October** checklist objectives, prepared on 25 October. It adds separate printable student/teacher PDFs and validated database backup/restore. The existing Tkinter workflow is retained. Final Windows acceptance, observed user testing, visual polish and the submission report remain to be completed.
+The desktop interface now has a dark navigation sidebar, an indigo and white theme, a live workspace dashboard, clearer question tables and styled paper previews. It remains a native Python/Tkinter app. All question-bank, generation, revision, PDF and backup features remain available.
+
+![Workspace overview](docs/images/workspace.png)
+
+## GUI update (0.6.0)
+
+- Navigate with the sidebar or Ctrl+1 through Ctrl+7. **Availability** is now **Check & generate**; **Review** is now **Paper studio**.
+- See real counts for active questions, approved non-demo questions, blueprint templates and saved papers. Open recently saved papers from the overview.
+- Scan striped question tables with the question text near the ID. Drag the divider to resize the question-details area.
+- Use clearer primary actions, consistent fonts, readable inputs and section headings in previews. Snapshot text and code indentation are preserved.
+- Pages expose overflow scrollbars when needed. Dashboard cards reflow on smaller windows; question editor tabs scroll and replacement/import controls remain visible with enlarged text.
+- **Backup / restore** is at the bottom of the sidebar.
+
+Close the old app, download/extract the latest code, then run `py -3.12 main.py` from the updated folder. The title bar should show **0.6.0**. No new dependency or database migration is required for this GUI update; the existing database path is retained. See [the design notes and screenshots](docs/GUI_REDESIGN.md).
 
 ## Windows saving fix (0.5.1)
 
-Version 0.5.0 could fail both PDF export and database backup with `[Errno 9] Bad file descriptor` on Windows. The shared output helper flushed a read-only file handle. Version 0.5.1 opens it read/write without truncating the finished output. This also fixes the recovery-copy step used during restore. Download the updated code and restart the app; no database migration or dependency reinstall is required. The title bar shows 0.5.1.
+Version 0.5.0 could fail both PDF export and database backup with `[Errno 9] Bad file descriptor` on Windows. The shared output helper flushed a read-only file handle. Version 0.5.1 opens it read/write without truncating the finished output. This also fixes the recovery-copy step used during restore. Download the updated code and restart the app; no database migration or dependency reinstall is required. This fix is retained in 0.6.0.
 
-Seven new regression tests cover writable flushing, both PDF exports, database backup/restore recovery and failure cleanup. The prior Linux-only tests missed Windows' write-access requirement. The new tests enforce that requirement on Linux; they are not a substitute for the pending Windows retest.
+Seven new regression tests cover writable flushing, both PDF exports, database backup/restore recovery and failure cleanup. The prior Linux-only tests missed Windows' write-access requirement. The new tests enforce that requirement on Linux; the user subsequently reported that saving works. A complete Windows restore/scaling acceptance pass is still pending.
 
 ## Start on Windows
 
@@ -73,23 +86,23 @@ The supplied CSV examples are original sample material for testing and review. T
 
 1. Open **Paper setup**. Inspect **Paper details** and **Selection rows**. The example allocates 40 marks across 13 questions.
 2. Choose **Save as new template**. The saved copy remains available after restart. Each save creates another copy; it never overwrites an existing template.
-3. Go to **Availability**, enable **Demo mode**, and choose **Check blueprint**. Production mode is the default and correctly reports shortages until your own approved bank is large enough.
+3. Go to **Check & generate**, enable **Demo mode**, and choose **Check blueprint**. Production mode is the default and correctly reports shortages until your own approved bank is large enough.
 4. Optionally enter seed `42`, then **Generate paper**. Review the student paper and teacher key in separate tabs. All demo-mode papers are visibly labelled.
 5. Verify the balance: **Easy 12, Medium 20, Hard 8 marks**; **Module 1: 18, Module 2: 22**. No question ID appears twice.
 6. Change Total marks to `41` and check again. Generation is blocked with exact validation errors; your requirements are not rounded or silently changed.
 
 Blueprints support up to 100 rows and papers up to 1,000 questions. The algorithm uses fixed unit/type/marks/difficulty groups. There are no flexible alternatives, optional questions or automatic difficulty estimates. Difficulty balance is based on teacher-assigned labels.
 
-Editing setup, seed, mode or the bank now preserves the paper in **Review**, including its own original blueprint. Availability must be checked again for new generation. Another app instance does not send live notifications; generation and replacement read the current bank. Existing snapshot questions retain their historical content and review state. Saving does not reapprove them against the current bank.
+Editing setup, seed, mode or the bank now preserves the paper in **Paper studio**, including its own original blueprint. Availability must be checked again for new generation. Another app instance does not send live notifications; generation and replacement read the current bank. Existing snapshot questions retain their historical content and review state. Saving does not reapprove them against the current bank.
 
 ## Try Phase 4
 
 1. Generate a demo paper using the Phase 3 steps above.
-2. In **Review**, choose a **Question no. → Replace question**. Inspect the Current question and Replacement preview tabs, choose an ID, then **Apply replacement**.
+2. In **Paper studio**, choose a **Question no. → Replace question**. Inspect the Current question and Replacement preview tabs, choose an ID, then **Apply replacement**.
 3. Check that only that question changed: the paper still has 13 unique questions, 40 marks and difficulty totals 12/20/8.
 4. Click **Save paper**. The status becomes **Saved • read-only**; repeated saves do not create duplicates.
 5. Close and reopen the app. In **Saved papers**, select the entry and **Open paper**. Both previews must match the saved contents exactly.
-6. Select **Create revision** from history or the saved paper in Review. Replace a question and **Save paper**. Two separate entries now exist; opening either shows its own content. The revision shows its parent paper ID.
+6. Select **Create revision** from history or the saved paper in Paper studio. Replace a question and **Save paper**. Two separate entries now exist; opening either shows its own content. The revision shows its parent paper ID.
 7. Edit or archive a bank question that appears in the original. Reopen the original and verify its text and key remain unchanged.
 8. Leave a paper/revision unsaved, then try to open another or generate again. Choose **No** to keep it. Editing the bank or setup also keeps it. Closing the app asks before losing unsaved work.
 
@@ -100,7 +113,7 @@ The generation seed describes the original selection, not manual replacements. H
 ## Try Phase 5: PDFs
 
 1. Open a saved paper from **Saved papers → Open paper**, or generate a new one.
-2. In **Review**, choose **Export student PDF**, then select a filename.
+2. In **Paper studio**, choose **Export student PDF**, then select a filename.
 3. Choose **Export teacher key PDF** and use a separate filename. The key includes answers, marking guidance, IDs and difficulty totals; the student PDF omits those fields.
 4. Open both PDFs and check every page. Print on A4 at actual size/100%. Demo-mode exports display the demo warning on every page.
 5. Reopen a saved revision and export again: the exported content comes from that exact snapshot. Exporting an unsaved working paper does not automatically save it to history.
@@ -141,9 +154,9 @@ py -3.12 main.py --db .\practice.sqlite3
 
 `--check` validates the example blueprint. `--generate-demo` prints a complete demo snapshot as JSON, including teacher answers; it is not a student export. These modes are mutually exclusive. Exit codes: 0 success, 1 availability failure, 2 invalid input or startup/database/display error.
 
-**171 automated tests passed on Python 3.12.14**, with ReportLab 4.4.9 and PDF verification dependencies installed. The new checks cover PDF audience separation, page bounds, indentation, literal markup, missing dependencies, backup integrity, WAL snapshots, cancelled restores, rollback after partial restore and recovery copies. Sample PDFs were rendered and inspected: 2 student pages and 4 teacher pages. Source compilation and GUI imports passed.
+**177 automated tests passed** on Python 3.12.3 with Tk 8.6 under a Linux virtual display, ReportLab 4.4.9 and PDF verification dependencies installed. This includes the prior 171 service/controller checks and six real Tk integration tests. Screens were rendered and inspected at normal and enlarged Tk text scaling; a 960×680 window was also checked. The earlier headless suite also passed on Python 3.12.14.
 
-The user confirmed the main Phase 3 and Phase 4 workflows on Windows. New Phase 5 native dialogs have not been visually tested in this display-less build environment. Windows export/printing/restore interaction and scaling still require manual checks. User satisfaction has not been formally measured. PDF tests skip if development dependencies are absent; install `requirements-dev.txt` to run the full suite. See `docs/TEST_RESULTS.md`.
+The user confirmed the main Phase 3/4 workflows and reported that Phase 5 saving works on Windows. The new design has been visually tested on Linux, not on Windows. Windows native dialogs, 125%/150% display scaling, printing and restore interaction still need a final manual pass. User satisfaction has not been formally measured. GUI tests skip without a display; PDF checks need the development dependencies. See `docs/TEST_RESULTS.md` for scope and evidence.
 
 ## Documents and next phase
 
@@ -157,4 +170,4 @@ The user confirmed the main Phase 3 and Phase 4 workflows on Windows. New Phase 
 - `docs/SCOPE.md`, `docs/BANK_REVIEW.md`: scope and sample question coverage.
 - `docs/MILESTONE_22_23.md`, `docs/GUI_WIREFRAMES.html`: historical Phase 1 evidence/design sketches.
 
-**Next: final Windows acceptance, observed user testing and visual polish.** The final project report and submission ZIP are not yet complete.
+**Next: final Windows acceptance and observed user testing.** The final project report and submission ZIP are not yet complete.

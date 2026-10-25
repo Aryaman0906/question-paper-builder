@@ -1,5 +1,16 @@
 # Project updates
 
+## 0.6.0 — Desktop GUI redesign
+
+- Add a dark sidebar, live overview counts, recent-paper shortcuts and consistent native ttk styles.
+- Rename the visible Availability/Review destinations to Check & generate/Paper studio; add Ctrl+1–7 navigation.
+- Improve question-table ordering, striping, review labels, empty states and a resizable details panel.
+- Style text fields and paper section headings without altering snapshot content or code indentation.
+- Reflow dashboard cards, expose page overflow and scroll focused controls into view.
+- Fix enlarged-text clipping in the question editor, replacement and CSV-import dialogs.
+- Preserve schema, database location, saved snapshots, dependencies and the 0.5.1 Windows saving fix.
+- 177 tests pass, including six real Tk integration tests. Actual Linux screenshots and design notes are included; Windows DPI/native-dialog acceptance remains pending.
+
 ## 0.5.1 — Windows PDF/backup saving fix
 
 - Fix `[Errno 9] Bad file descriptor` reported by the user on both PDF export and database backup.

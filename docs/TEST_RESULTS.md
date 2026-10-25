@@ -1,3 +1,32 @@
+# 0.6.0 GUI verification record
+
+Date: 25 October 2026. Full suite: **177 tests passed, zero skipped**, Python 3.12.3 / Tk 8.6 on Linux with a virtual X display, ReportLab 4.4.9 and development dependencies. The existing 171 headless checks also passed on Python 3.12.14 before adding the display tests.
+
+Six new real-widget tests (`tests/test_gui_workspace.py`) verify:
+
+- Sidebar destinations, active states and database-backed dashboard counts, including exclusion of demo questions from the approved-for-exams count.
+- Generation through the button, byte-for-byte preview text equality, section/demo tags, read-only saved states, revisions and cancelled opening over unsaved work.
+- Question search, empty results, clearing filters, selection and complete answer details.
+- Scrollable overflow on every workspace page at 960×680 and bringing generation controls into view.
+- Question-editor content, cancellation and opening/closing the backup dialog without data changes.
+- Enlarged text (Tk scaling 144/72): replacement Apply stays visible, marking guidance remains reachable, and CSV-import controls remain inside a 760×520 dialog.
+
+Rendered and inspected the overview, question bank, paper setup, availability, student preview, teacher key, history and help. Also inspected the question editor, selection-row editor, backup and replacement dialogs at normal and enlarged text sizes. Fixed table-driven page overflow, theme-font overrides and clipped dialog controls found during these checks. Repository screenshots use only bundled demo data.
+
+This is **Linux rendering and simulated Tk text scaling**, not a Windows DPI certification. Final manual checks remain: Windows 125%/150% scaling, keyboard focus through native dialogs, export/printing and restore/recovery with a disposable database. The user reported the previous Windows saving error resolved. No formal satisfaction or task-time measurements have been collected.
+
+Run on a desktop:
+
+```text
+python -m unittest discover -s tests -v
+```
+
+On a Linux machine with Xvfb installed, `xvfb-run -a python -m unittest discover -s tests -v` supplies a display. Without a display, the real Tk class is explicitly skipped; existing headless tests still run. These are testing tools, not application requirements.
+
+The records below describe earlier releases and retain their original test scope.
+
+---
+
 # Phase 5 verification record
 
 Date: 25 October 2026. Runtime: Python 3.12.14. Platform: Linux build environment.

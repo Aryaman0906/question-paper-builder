@@ -4,7 +4,7 @@ from copy import deepcopy
 import sqlite3
 import tkinter as tk
 from tkinter import ttk, messagebox
-from tkinter.scrolledtext import ScrolledText
+from .ui import ScrolledText, stripe_tree, decorate_text
 from .blueprints import save_blueprint, load_blueprint, list_blueprints
 from .storage import BankError, demo_blueprint
 from .validation import blueprint_errors, KINDS, DIFFICULTIES
@@ -35,7 +35,7 @@ class RowEditor(tk.Toplevel):
             w.grid(row=i,column=1,sticky='ew',pady=7)
         self.error=tk.StringVar()
         ttk.Label(box,textvariable=self.error,foreground='#9b2d20',wraplength=400).grid(row=6,column=0,columnspan=2,pady=8)
-        ttk.Button(box,text='Apply row',command=self.save).grid(row=7,column=1,sticky='e')
+        ttk.Button(box,text='Apply row',style='Primary.TButton',command=self.save).grid(row=7,column=1,sticky='e')
         ttk.Button(box,text='Cancel',command=self.cancel).grid(row=7,column=0,sticky='w')
         self.original=self.state_values()
         self.protocol('WM_DELETE_WINDOW',self.cancel);self.bind('<Escape>',lambda _:self.cancel());self.grab_set()
@@ -63,13 +63,14 @@ class BlueprintPanel(ttk.Frame):
         super().__init__(parent);self.pack(fill='both',expand=True)
         self.repo=repository;self.on_change=on_change;self.loading=True;self.row_editor=None
         top=ttk.Frame(self);top.pack(fill='x',pady=(0,8))
+        ttk.Label(self,text='TEMPLATE LIBRARY',style='Muted.TLabel').pack(anchor='w',before=top,pady=(0,5))
         self.saved=tk.StringVar();self.saved_map={}
-        self.saved_combo=ttk.Combobox(top,textvariable=self.saved,state='readonly',width=35)
+        self.saved_combo=ttk.Combobox(top,textvariable=self.saved,state='readonly',width=22)
         self.saved_combo.pack(side='left',fill='x',expand=True)
         ttk.Button(top,text='Load',command=self.load_saved).pack(side='left',padx=4)
         ttk.Button(top,text='Refresh list',command=self.refresh_saved).pack(side='left')
-        ttk.Button(top,text='Save as new template',command=self.save).pack(side='left',padx=4)
-        tabs=ttk.Notebook(self);tabs.pack(fill='both',expand=True)
+        ttk.Button(top,text='Save template copy',command=self.save).pack(side='left',padx=4)
+        tabs=ttk.Notebook(self);self.tabs=tabs;tabs.pack(fill='both',expand=True)
         details=ttk.Frame(tabs,padding=12);selection=ttk.Frame(tabs,padding=10)
         tabs.add(details,text='Paper details');tabs.add(selection,text='Selection rows')
         details.columnconfigure(1,weight=1);self.vars={}
@@ -90,7 +91,7 @@ class BlueprintPanel(ttk.Frame):
         columns=('section','unit','kind','difficulty','marks','count','subtotal')
         self.tree=ttk.Treeview(table,columns=columns,show='headings',selectmode='browse',height=7)
         for key,width in zip(columns,(75,140,130,85,75,75,85)):
-            self.tree.heading(key,text=key.title());self.tree.column(key,width=width,minwidth=50)
+            self.tree.heading(key,text=key.title(),anchor='w');self.tree.column(key,width=width,minwidth=50)
         y=ttk.Scrollbar(table,orient='vertical',command=self.tree.yview);x=ttk.Scrollbar(table,orient='horizontal',command=self.tree.xview)
         self.tree.configure(yscrollcommand=y.set,xscrollcommand=x.set)
         self.tree.grid(row=0,column=0,sticky='nsew');y.grid(row=0,column=1,sticky='ns');x.grid(row=1,column=0,sticky='ew')
@@ -103,7 +104,7 @@ class BlueprintPanel(ttk.Frame):
         bottom=ttk.Frame(self);bottom.pack(fill='x')
         ttk.Button(bottom,text='New blank',command=self.new_blank).pack(side='left')
         ttk.Button(bottom,text='Load demo blueprint',command=self.load_demo).pack(side='left',padx=6)
-        ttk.Button(bottom,text='Check availability',command=on_check).pack(side='right')
+        ttk.Button(bottom,text='Check availability  →',style='Primary.TButton',command=on_check).pack(side='right')
         self.status=tk.StringVar(value='Demo blueprint loaded. Generation excludes demo questions unless you opt in.')
         ttk.Label(self,textvariable=self.status,wraplength=1000).pack(anchor='w',pady=(6,0))
         for var in self.vars.values():var.trace_add('write',lambda *_:self.changed())
@@ -150,6 +151,7 @@ class BlueprintPanel(ttk.Frame):
         self.tree.delete(*self.tree.get_children())
         for i,r in enumerate(self.rows):
             self.tree.insert('','end',iid=str(i),values=tuple(r[k] for k in ('section','unit','kind','difficulty','marks','count'))+(r['marks']*r['count'],))
+        stripe_tree(self.tree)
         if select is not None and select<len(self.rows):self.tree.selection_set(str(select));self.tree.see(str(select))
 
     def selected(self):
