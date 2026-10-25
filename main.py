@@ -8,7 +8,7 @@ from paperbuilder.validation import availability
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Question Paper Builder 0.4 saved papers and revisions')
+    parser = argparse.ArgumentParser(description='Question Paper Builder 0.5 PDF export and backups')
     parser.add_argument('--db', type=Path, help='Optional demo database location')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--generate-demo', action='store_true', help='Generate a checked demo paper as JSON without opening a window')
@@ -23,7 +23,8 @@ def main():
         print(f'Cannot open the question bank: {exc}')
         return 2
     try:
-        repo.seed_demo()
+        if repo.is_new:
+            repo.seed_demo()
         if args.generate_demo:
             from paperbuilder.generation import generate_paper
             print(json.dumps(generate_paper(demo_blueprint(), repo.questions(), include_demo=True, seed=args.seed), indent=2))

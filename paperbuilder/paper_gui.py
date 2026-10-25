@@ -115,7 +115,7 @@ class HistoryPanel(ttk.Frame):
         if selected and self.tree.exists(selected):
             self.tree.selection_set(selected); self.tree.see(selected)
         self.selection_changed()
-        self.status.set(f'{len(rows)} saved papers. Revisions appear as separate entries; open one to see its parent ID. PDF export comes in Phase 5.')
+        self.status.set(f'{len(rows)} saved papers. Revisions appear as separate entries; open one to see its parent ID. Open a paper to export its student PDF or teacher key from Review.')
 
     def open(self, revision):
         selection = self.tree.selection()

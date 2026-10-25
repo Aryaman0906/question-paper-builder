@@ -46,6 +46,7 @@ class Repository:
         self.migration_backup = None
         try:
             version = self.connection.execute('PRAGMA user_version').fetchone()[0]
+            self.is_new = version == 0
             if version not in (0, 1, 2):
                 raise BankError(f'Unsupported database version {version}; no changes made.')
             if version == 0:

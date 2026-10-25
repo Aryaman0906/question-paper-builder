@@ -1,5 +1,20 @@
 # Project updates
 
+## Phase 5 — PDF export and database backup/restore (30–31 October objectives)
+
+Implemented on 25 October 2026. Version 0.5.0.
+
+- Added separate A4 student/teacher exports with safe audience field selection, literal text, code indentation, pagination and demo labels.
+- Added ReportLab as an optional-at-runtime PDF dependency; installation errors are actionable and do not stop other features.
+- Stage exports before publishing, confirm PDF overwrite and preserve existing files on failure.
+- Added SQLite online backups including committed WAL data, validation and non-overwriting output names.
+- Added restore preview, explicit replacement confirmation, private stable snapshot and automatic pre-restore recovery copy.
+- Restore all four data tables in one transaction; rollback on failure and close the GUI only after success.
+- Seed demo records only for newly created databases, preserving exact restored/empty state.
+- Expanded automated tests from 114 to 164. Rendered/inspected 2-page student and 4-page teacher examples.
+- User confirmed Phase 4 functionality on Windows. Phase 5 native GUI/printing acceptance remains pending.
+- PDF complex-script support, formal usability results, visual redesign and final submission materials remain incomplete.
+
 ## Phase 4 — Replacement, saved papers and revisions (28–29 October objectives)
 
 Implemented on 25 October 2026. Version 0.4.0.

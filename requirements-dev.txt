@@ -1,0 +1,4 @@
+-r requirements.txt
+# PDF text/layout regression checks (not required by the desktop app).
+pypdf>=5,<7
+pdfplumber>=0.11,<0.12

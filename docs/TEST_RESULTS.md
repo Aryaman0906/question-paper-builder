@@ -1,4 +1,4 @@
-# Phase 4 verification record
+# Phase 5 verification record
 
 Date: 25 October 2026. Runtime: Python 3.12.14. Platform: Linux build environment.
 
@@ -6,7 +6,7 @@ Date: 25 October 2026. Runtime: Python 3.12.14. Platform: Linux build environmen
 python -m unittest discover -s tests -v
 ```
 
-**Result: 114 tests passed (16 foundations, 31 Phase 2, 28 Phase 3, 29 Phase 4 service tests, 10 headless controller tests).**
+**Result: 164 tests passed (114 prior tests, 23 backup/restore tests, 18 PDF tests and 9 Phase 5 headless controller tests).**
 
 | Area | Verified behavior |
 |---|---|
@@ -96,7 +96,7 @@ Observe two representative users completing add, approve, archive/restore, valid
 The earlier user-satisfaction targets remain pending; no positive usability result is claimed.
 
 
-## Phase 4 desktop acceptance — pending on Windows
+## Phase 4 desktop acceptance — main workflow confirmed by user
 
 - [ ] Replace a question after comparing both dialog tabs. Check only that question changes and 13/40, difficulty and unit totals remain exact.
 - [ ] Save, restart, reopen and compare both previews including code indentation.
@@ -108,4 +108,35 @@ The earlier user-satisfaction targets remain pending; no positive usability resu
 - [ ] Edit setup while a paper is open: Review stays unchanged; new generation uses the new setup.
 - [ ] Verify history vertical/horizontal scrolling, keyboard selection, replacement dialog buttons and 125%/150% scaling.
 
-User satisfaction and Phase 4 visual acceptance have not been measured. PDF export/backup are not implemented yet.
+The user reported that everything in Phase 4 was working on Windows. This confirms their functional workflow; the detailed edge-case/scaling checklist above and formal satisfaction measurements were not separately reported. Phase 5 now implements PDF export and backup/restore.
+
+
+## Phase 5 automated and rendered verification
+
+- Exact all-table backup/restore survives reopening, including question review/archive state, Unicode, blueprint rows, saved papers and revision parents.
+- Recovery copies can reverse a successful restore. Copy failure or mid-insert failure rolls back changes, and database locks fail safely.
+- Backup includes committed WAL content; new names protect older backups. Invalid versions/files, unexpected schema, corrupted paper JSON, bad hashes, orphan/gapped rows and missing revision parents are rejected.
+- Cancelling preparation changes nothing. Restoring uses a private validated snapshot even if the selected source file changes after preview.
+- Newly initialized databases seed demos; existing empty/restored databases remain empty, including CLI startup.
+- PDFs contain correct student/teacher fields and metadata, all MCQ options, A4 pages, audience/demo labels and page numbers. Re-exporting a saved snapshot preserves printed text.
+- Long code spans pages within bounds, code indentation has correct visual offsets, and markup-like user text remains literal.
+- Missing ReportLab, unsupported scripts, invalid snapshots and file-output failures produce recoverable errors. Existing output and input data remain unchanged. Bundled-font fallback handles the English demo.
+- Headless callbacks cover cancelled export/overwrite, unsaved-history status, invalid/cancelled/failed restore and app closure only after successful restore.
+
+Rendered and visually inspected all pages of final demo outputs: **2 student pages and 4 teacher pages**. Checked margins, question/answer grouping, headings, code indentation, demo labels and footers. Long-code bounds are checked programmatically with pdfplumber. Development PDF dependencies are required; missing dependencies cause PDF tests to skip rather than implying verification.
+
+Source compilation, GUI-module import and CLI smoke checks passed. No Phase 5 native window was rendered in the build environment.
+
+## Phase 5 Windows acceptance — pending
+
+- [ ] Install requirements with the same Python 3.12 interpreter used to launch the app.
+- [ ] Export student and teacher PDFs from both a generated paper and a reopened saved revision; inspect every page and print A4 at 100%.
+- [ ] Confirm student PDF has no answer/key metadata and teacher output has the correct answers/options.
+- [ ] Cancel Save As/overwrite dialogs; existing file and open paper stay unchanged.
+- [ ] Make a backup, reopen the dialog, inspect its record counts and cancel restore; no data changes.
+- [ ] On a separate practice database, make a change after backup, restore, restart, then use the recovery copy to undo it.
+- [ ] Confirm invalid backup input is rejected, and unsaved-work replacement warning is clear.
+- [ ] Close other app instances before restore; confirm success closes the app and reports the recovery path.
+- [ ] Check buttons, file dialogs, keyboard navigation and 125%/150% display scaling.
+
+Formal completion-time/ease/satisfaction targets remain unmeasured. Complex-script PDFs, visual redesign and submission materials remain outside this implementation.

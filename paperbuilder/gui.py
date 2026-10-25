@@ -1,7 +1,8 @@
-"""Phase 4 desktop app: immutable papers, history and compatible replacement."""
+"""Phase 5 desktop app: paper/key PDFs and database backup/restore."""
 import tkinter as tk
 import sqlite3
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
+from pathlib import Path
 from tkinter.scrolledtext import ScrolledText
 from .validation import availability, DIFFICULTIES
 from .question_bank import BankPanel
@@ -10,6 +11,8 @@ from .generation import generate_paper, preview_text, GenerationError
 from .papers import save_paper, load_paper, create_revision
 from .paper_gui import HistoryPanel, ReplacementDialog
 from .storage import BankError
+from .pdf_export import export_pdf, ExportError
+from .backup_gui import BackupDialog
 
 
 class Application:
@@ -18,7 +21,7 @@ class Application:
         self.repo = repository
         self.paper = None
         self.paper_saved = False
-        root.title('Question Paper Builder | Saved papers and revisions 0.4')
+        root.title('Question Paper Builder | PDF export and backups 0.5')
         root.geometry('1160x760'); root.minsize(850, 620)
         style = ttk.Style(root)
         if 'clam' in style.theme_names(): style.theme_use('clam')
@@ -30,8 +33,10 @@ class Application:
         style.configure('Treeview', rowheight=28)
         style.configure('Treeview.Heading', font=('Segoe UI', 10, 'bold'))
         wrapper = ttk.Frame(root, padding=18); wrapper.pack(fill='both', expand=True)
-        ttk.Label(wrapper, text='Question Paper Builder', style='Heading.TLabel').pack(anchor='w')
-        ttk.Label(wrapper, text='Question bank and paper generation • Phase 4').pack(anchor='w', pady=(4,10))
+        heading=ttk.Frame(wrapper);heading.pack(fill='x')
+        ttk.Label(heading, text='Question Paper Builder', style='Heading.TLabel').pack(side='left')
+        ttk.Button(heading,text='Backup / restore',command=lambda:BackupDialog(self.root,self.repo)).pack(side='right')
+        ttk.Label(wrapper, text='Question bank and paper generation • Phase 5').pack(anchor='w', pady=(4,10))
         self.notebook = ttk.Notebook(wrapper); self.notebook.pack(fill='both', expand=True)
         self.frames = {}
         for title in ('Home','Question bank','Paper setup','Availability','Review','Saved papers','Help'):
@@ -42,7 +47,7 @@ class Application:
         self.history = HistoryPanel(self.frames['Saved papers'], self.repo, self.open_saved)
         self.notebook.bind('<<NotebookTabChanged>>', self.tab_changed)
         self.help_screen()
-        ttk.Label(wrapper, text='Demo samples need instructor review. Save papers to retain exact copies. PDF export comes in Phase 5.').pack(anchor='w', pady=(10,0))
+        ttk.Label(wrapper, text='Demo samples need instructor review. Student and teacher PDFs are separate. Back up your saved data regularly.').pack(anchor='w', pady=(10,0))
         root.bind('<Control-1>', lambda _: self.go('Home'))
         root.bind('<Control-2>', lambda _: self.go('Question bank'))
         root.bind('<Control-3>', lambda _: self.go('Paper setup'))
@@ -78,7 +83,7 @@ class Application:
             box=ttk.LabelFrame(f, text=title, padding=14); box.pack(fill='x', pady=6)
             self.label(box,detail).pack(side='left')
             ttk.Button(box, text='Open', command=lambda t=target:self.go(t)).pack(side='right')
-        self.label(f,'Generate, replace compatible questions, and save exact papers. Reopen saved papers or create revisions from history. PDF export comes next.').pack(anchor='w', pady=16)
+        self.label(f,'Generate, replace compatible questions, and save exact papers. Reopen saved papers or create revisions from history. Export student and teacher PDFs from Review. Use Backup / restore to protect saved data.').pack(anchor='w', pady=16)
 
     def bank(self):
         self.bank_panel = BankPanel(self.frames['Question bank'], self.repo, self.invalidate)
@@ -164,6 +169,8 @@ class Application:
         self.save_button.configure(state='disabled' if saved else 'normal')
         self.replace_button.configure(state='disabled' if saved else 'normal')
         self.revision_button.configure(state='normal' if saved else 'disabled')
+        self.student_pdf_button.configure(state='normal')
+        self.teacher_pdf_button.configure(state='normal')
         self.preview_tabs.select(0);self.go('Review')
 
     def review_screen(self):
@@ -178,12 +185,38 @@ class Application:
         self.question_number=tk.StringVar()
         self.question_combo=ttk.Combobox(controls,textvariable=self.question_number,width=6,state='readonly');self.question_combo.pack(side='left')
         self.replace_button=ttk.Button(controls,text='Replace question',command=self.replace_current,state='disabled');self.replace_button.pack(side='left',padx=6)
+        exports=ttk.Frame(f);exports.pack(fill='x',pady=(0,8))
+        self.student_pdf_button=ttk.Button(exports,text='Export student PDF',command=lambda:self.export_current(False),state='disabled');self.student_pdf_button.pack(side='left')
+        self.teacher_pdf_button=ttk.Button(exports,text='Export teacher key PDF',command=lambda:self.export_current(True),state='disabled');self.teacher_pdf_button.pack(side='left',padx=6)
         self.preview_tabs=ttk.Notebook(f);self.preview_tabs.pack(fill='both',expand=True)
         for name,attribute in (('Student paper','student_text'),('Teacher key','teacher_text')):
             frame=ttk.Frame(self.preview_tabs);self.preview_tabs.add(frame,text=name)
             box=ScrolledText(frame,wrap='word',font=('Consolas',11),state='disabled');box.pack(fill='both',expand=True)
             setattr(self,attribute,box);self.set_text(box,'Generate a paper from Availability.')
         self.label(f,'Review uses its own blueprint and question snapshots. Bank/setup edits do not change this paper. Save before closing; saved copies require a new revision to edit.').pack(anchor='w',pady=(8,0))
+
+    def export_current(self, teacher):
+        if not self.paper:
+            return
+        kind='Teacher_Key' if teacher else 'Student_Paper'
+        path=filedialog.asksaveasfilename(parent=self.root,title='Export '+kind.replace('_',' '),
+            defaultextension='.pdf',filetypes=[('PDF document','*.pdf')],
+            initialfile=kind+'_'+self.paper['paper_id']+'.pdf',confirmoverwrite=False)
+        if not path:
+            return
+        destination=Path(path).expanduser().resolve()
+        if destination == self.repo.path.resolve():
+            messagebox.showerror('Cannot export','Choose a different file from the active database.',parent=self.root);return
+        overwrite=destination.exists()
+        if overwrite and not messagebox.askyesno('Replace existing PDF?',
+                'Replace this file?\n'+str(destination),parent=self.root):
+            return
+        try:
+            export_pdf(self.paper,destination,teacher=teacher,overwrite=overwrite)
+        except ExportError as exc:
+            messagebox.showerror('Cannot export PDF',str(exc),parent=self.root);return
+        note='\nThis working paper is still unsaved in history. Use Save paper to retain it.' if not self.paper_saved else ''
+        messagebox.showinfo('PDF exported',str(destination)+note,parent=self.root)
 
     def save_current(self):
         if not self.paper or self.paper_saved:
@@ -232,9 +265,11 @@ class Application:
 • Replace a question with an unused eligible match; marks and balance stay exact.
 • Save/reopen exact paper snapshots, even after bank edits or archives.
 • Create and save revisions without overwriting their parent papers.
+• Export separate printable A4 student and teacher PDFs.
+• Back up all saved data and restore a validated backup with a recovery copy.
 
 WHAT COMES NEXT
-30–31 Oct: PDF export and backups.
+Final Windows acceptance, user testing, visual polish and submission report.
 
 DIFFICULTY
 Easy / Medium / Hard are estimated labels for a target cohort.
@@ -245,7 +280,7 @@ Ctrl+1 Home, Ctrl+2 Question bank, Ctrl+3 Paper setup.
 Use Tab / Shift+Tab to move through controls.
 
 VERSION
-0.4.0 — Saved papers and revisions. Python standard library only.
+0.5.0 — PDF export and backups. ReportLab is needed only for PDF export.
 
 SAVED PAPERS
 Save paper stores the blueprint, ordered questions, answers and marking guidance.
@@ -254,6 +289,15 @@ Save the revision to retain it. The original stays unchanged.
 Replacements use the current bank; existing snapshot content is historical.
 The seed describes initial generation, not replacements. Reopen exact saved copies.
 Changing the setup or bank preserves Review; generating another paper asks before discarding unsaved work.
+
+PDF EXPORT AND BACKUPS
+Export the open paper from Review; history entries can be reopened and exported again.
+Install PDF support once: py -3.12 -m pip install -r requirements.txt
+Exports preserve code indentation. Long code lines use > continuation; tabs display as four spaces.
+Fonts must cover the text. Complex scripts (including Hindi/Arabic) are not supported by this exporter yet.
+Backup includes saved questions/templates/papers and teacher answers, not unsaved edits or exported PDFs.
+Restore replaces data, creates a recovery backup, and closes the app. Reopen to refresh every screen.
+Use a new backup filename each time; existing backup files are never overwritten.
 
 REVIEW AND IMPORT
 New/imported questions are drafts. Editing content resets approval.

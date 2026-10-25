@@ -1,8 +1,8 @@
-# Implementation contracts — Phase 4
+# Implementation contracts — Phase 5
 
 ## Layers
 
-`main.py` opens the local question database and GUI. `gui.py` contains presentation and navigation. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access, bank mutations and migrations. `question_bank.py` contains bank/editor/import widgets, and `csv_import.py` owns CSV parsing and preview. All GUI writes use repository services. `blueprint_gui.py` edits templates, `blueprints.py` persists new copies, and `generation.py` selects and independently validates papers. `papers.py` owns snapshot persistence, revisions and replacement; `paper_gui.py` owns history and replacement widgets. `pdf_export.py` remains planned. Selection and persistence rules stay outside widget callbacks.
+`main.py` opens the local question database and GUI. `gui.py` contains presentation and navigation. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access, bank mutations and migrations. `question_bank.py` contains bank/editor/import widgets, and `csv_import.py` owns CSV parsing and preview. All GUI writes use repository services. `blueprint_gui.py` edits templates, `blueprints.py` persists new copies, and `generation.py` selects and independently validates papers. `papers.py` owns snapshot persistence, revisions and replacement; `paper_gui.py` owns history and replacement widgets. `pdf_export.py` renders audience-specific PDF fields, `file_output.py` stages output, and `backups.py`/`backup_gui.py` implement validated backup/restore. Selection and persistence rules stay outside widget callbacks.
 
 ## Database model
 
@@ -111,3 +111,25 @@ Generation copies inputs, deduplicates identical IDs (rejecting conflicting reco
 A separate validator recomputes question counts, IDs, row order, selection fields, eligibility, difficulty marks, unit totals and summary from the selected items. No partial paper is returned on failure. Student text uses an explicit selection of fields (prompt, options, marks and exam metadata); teacher text adds answers, rubrics, IDs and difficulty. Both have an explicit demo banner when demo mode was selected.
 
 Changing local setup, mode, seed or bank content invalidates availability but preserves the independent paper snapshot in Review. Opening/generating another paper prompts before discarding an unsaved working copy. A failed open/save/generation preserves it. Close prompts for unsaved paper or blueprint changes. Saved papers are read-only until a new revision is created. Cross-process changes are not live-subscribed; generation/replacement take fresh bank reads. Saving templates does not save papers; Save paper is explicit. JSON command output and stored snapshots include teacher answers.
+
+
+## Phase 5 PDF contract
+
+`export_blocks` explicitly selects student-visible fields; teacher fields are only appended for the teacher export. Neither the full JSON nor answers are attached to student PDFs or their metadata. The snapshot validates before rendering and is never mutated. Literal text is escaped before use in Paragraphs; question text cannot inject ReportLab tags or resource reads. Code uses a monospaced font with indentation preserved; tabs are expanded to four spaces and long lines use a visible continuation prefix. KeepTogether groups avoid splitting ordinary question/key blocks; oversized content remains splittable.
+
+TrueType coverage is checked before writing. Windows Segoe UI/Consolas or Linux DejaVu are used when suitable; ReportLab Vera and ASCII Courier provide demo fallbacks. Unsupported glyphs and complex scripts are reported rather than silently lost. A4 pages carry audience, page numbers and repeated demo labels. PDF support is imported lazily; the app still starts without ReportLab. Output is built in a temporary file beside its destination, then published. Existing non-PDF files are never overwritten; GUI PDF overwrite requires confirmation. New names are exclusively reserved to prevent accidental overwrite during publication. A crash during reservation can leave an empty new file, never overwrite a prior file; invalid incomplete PDFs/backups must not be used.
+
+## Phase 5 backup/restore contract
+
+Backups use SQLite's online backup API rather than copying the raw live database file, including WAL-committed content. Copy progress has a ten-second deadline and 200 MiB limit. The staged backup is validated before publication; existing filenames are refused. Backup contains persisted data, not unsaved GUI state or exported PDFs.
+
+Restore opens a separate source read-only and copies it into a private snapshot. It checks schema version 2, integrity, known schema objects/column names, SQL constraints, question validation/prompt hashes, exact blueprint positions, snapshot metadata and revision parent chains. Source data is inserted into an application-owned canonical in-memory schema; source DDL/triggers are not executed to populate the restored database. Schema-v1 column ordering after migration is handled by explicit column names. The counts shown for confirmation describe the private validated copy and cannot be changed by later edits to the source file.
+
+After confirmation, `BEGIN IMMEDIATE` holds the active database's writer lock. A second read-only connection backs up the committed pre-restore state to a unique recovery file beside the active database. This avoids calling SQLite backup on a connection with an active write transaction. Only then are all four tables replaced, using canonical column names and enforcing constraints. Any failure rolls the transaction back; recovery-copy failure prevents replacement. No database files are swapped under live connections. Success closes the GUI so stale forms cannot write old state. Users must close other app instances before restore; there is no global single-instance enforcement. The recovery file is available to reverse a successful restore.
+
+Startup seeds samples only for a newly initialized database. Reopening a restored empty database must not add data. Restore does not merge records or support older/future schemas. File backups are unencrypted and contain teacher answers.
+
+References used for implementation:
+- SQLite online backup: https://www.sqlite.org/backup.html
+- ReportLab fonts: https://docs.reportlab.com/reportlab/userguide/ch3_fonts/
+- ReportLab preformatted/splittable content: https://docs.reportlab.com/reportlab/userguide/ch9_other_useful_flowables/
