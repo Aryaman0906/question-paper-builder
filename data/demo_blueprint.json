@@ -1,0 +1,63 @@
+{
+  "id": "demo-40",
+  "title": "Python demonstration paper",
+  "subject": "Python Programming",
+  "duration_minutes": 60,
+  "total_marks": 40,
+  "instructions": "All questions are compulsory. Show your reasoning and preserve indentation in code. Demonstration content only.",
+  "difficulty_percent": {
+    "Easy": 30,
+    "Medium": 50,
+    "Hard": 20
+  },
+  "rows": [
+    {
+      "section": "A",
+      "unit": "Module 1",
+      "kind": "Short answer",
+      "marks": 2,
+      "difficulty": "Easy",
+      "count": 3
+    },
+    {
+      "section": "A",
+      "unit": "Module 2",
+      "kind": "Short answer",
+      "marks": 2,
+      "difficulty": "Easy",
+      "count": 3
+    },
+    {
+      "section": "B",
+      "unit": "Module 1",
+      "kind": "Short answer",
+      "marks": 4,
+      "difficulty": "Medium",
+      "count": 2
+    },
+    {
+      "section": "B",
+      "unit": "Module 2",
+      "kind": "Short answer",
+      "marks": 4,
+      "difficulty": "Medium",
+      "count": 3
+    },
+    {
+      "section": "C",
+      "unit": "Module 1",
+      "kind": "Coding",
+      "marks": 4,
+      "difficulty": "Hard",
+      "count": 1
+    },
+    {
+      "section": "C",
+      "unit": "Module 2",
+      "kind": "Coding",
+      "marks": 4,
+      "difficulty": "Hard",
+      "count": 1
+    }
+  ]
+}

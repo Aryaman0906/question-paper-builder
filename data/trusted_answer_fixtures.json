@@ -1,0 +1,105 @@
+[
+  {
+    "question_id": "PY-029",
+    "inputs": [
+      [
+        "red",
+        "blue",
+        "red"
+      ],
+      []
+    ],
+    "expected": [
+      {
+        "red": 2,
+        "blue": 1
+      },
+      {}
+    ]
+  },
+  {
+    "question_id": "PY-030",
+    "inputs": [
+      "level",
+      "Level",
+      "",
+      "ab"
+    ],
+    "expected": [
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  {
+    "question_id": "PY-031",
+    "inputs": [
+      [
+        5,
+        2,
+        -4,
+        2,
+        0
+      ],
+      []
+    ],
+    "expected": [
+      [
+        -4,
+        0,
+        2,
+        2
+      ],
+      []
+    ]
+  },
+  {
+    "question_id": "PY-032",
+    "inputs": [
+      0,
+      1,
+      7
+    ],
+    "expected": [
+      [],
+      [
+        0
+      ],
+      [
+        0,
+        1,
+        1,
+        2,
+        3,
+        5,
+        8
+      ]
+    ]
+  },
+  {
+    "question_id": "PY-035",
+    "inputs": [
+      [
+        "12",
+        "x",
+        "-3",
+        "2.5"
+      ],
+      []
+    ],
+    "expected": [
+      [
+        [
+          12,
+          -3
+        ],
+        2
+      ],
+      [
+        [],
+        0
+      ]
+    ]
+  }
+]
