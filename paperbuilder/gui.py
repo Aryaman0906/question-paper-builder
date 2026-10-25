@@ -1,10 +1,11 @@
-"""Navigable desktop wireframe. Later-stage actions are deliberately disabled."""
+"""Phase 2 desktop app: working question bank and blueprint availability."""
 from copy import deepcopy
 import tkinter as tk
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 from .storage import demo_blueprint
 from .validation import availability
+from .question_bank import BankPanel
 
 
 class Application:
@@ -12,7 +13,7 @@ class Application:
         self.root = root
         self.repo = repository
         self.blueprint = demo_blueprint()
-        root.title('Question Paper Builder | Foundation 0.1')
+        root.title('Question Paper Builder | Question bank 0.2')
         root.geometry('1160x760'); root.minsize(850, 620)
         style = ttk.Style(root)
         if 'clam' in style.theme_names(): style.theme_use('clam')
@@ -25,7 +26,7 @@ class Application:
         style.configure('Treeview.Heading', font=('Segoe UI', 10, 'bold'))
         wrapper = ttk.Frame(root, padding=18); wrapper.pack(fill='both', expand=True)
         ttk.Label(wrapper, text='Question Paper Builder', style='Heading.TLabel').pack(anchor='w')
-        ttk.Label(wrapper, text='Demo workspace • Foundation milestone • 22–23 October 2026').pack(anchor='w', pady=(4,10))
+        ttk.Label(wrapper, text='Local question bank • Phase 2 • New questions and demo samples').pack(anchor='w', pady=(4,10))
         self.notebook = ttk.Notebook(wrapper); self.notebook.pack(fill='both', expand=True)
         self.frames = {}
         for title in ('Home','Question bank','Paper setup','Availability','Review','Saved papers','Help'):
@@ -43,6 +44,15 @@ class Application:
         root.bind('<Control-1>', lambda _: self.go('Home'))
         root.bind('<Control-2>', lambda _: self.go('Question bank'))
         root.bind('<Control-3>', lambda _: self.go('Paper setup'))
+        root.protocol('WM_DELETE_WINDOW', self.close)
+
+    def close(self):
+        editor = self.bank_panel.editor
+        if editor is not None and editor.winfo_exists():
+            editor.cancel()
+            if editor.winfo_exists():
+                return
+        self.root.destroy()
 
     def go(self, title): self.notebook.select(self.frames[title])
 
@@ -52,62 +62,21 @@ class Application:
     def home(self):
         f = self.frames['Home']
         ttk.Label(f, text='Start with a clear paper blueprint', style='Heading.TLabel').pack(anchor='w', pady=(8,14))
-        self.label(f, 'This starter lets you inspect the demonstration bank, examine a 40-mark blueprint and check question availability. The remaining screens show the agreed workflow.').pack(anchor='w', pady=(0,20))
+        self.label(f, 'Manage questions, review their answers, approve them and import a CSV. You can also check availability for the example blueprint.').pack(anchor='w', pady=(0,20))
         for title, detail, target in (
-            ('1  Inspect 40 sample questions','Read prompts, answers and marking guidance.','Question bank'),
+            ('1  Manage your question bank','Add, edit, approve, archive or import questions.','Question bank'),
             ('2  Examine the blueprint','Six selection groups, 13 questions, 40 marks.','Paper setup'),
             ('3  Check availability','See exactly which groups have sufficient questions.','Availability')):
             box=ttk.LabelFrame(f, text=title, padding=14); box.pack(fill='x', pady=6)
             self.label(box,detail).pack(side='left')
             ttk.Button(box, text='Open', command=lambda t=target:self.go(t)).pack(side='right')
-        self.label(f,'Next milestone: question editing, approval, archiving and CSV import on 24–25 October.').pack(anchor='w', pady=16)
+        self.label(f,'Question-bank editing and CSV import are ready. Next milestone: editable blueprints and paper generation.').pack(anchor='w', pady=16)
 
     def bank(self):
-        f=self.frames['Question bank']
-        bar=ttk.Frame(f);bar.pack(fill='x',pady=(0,10))
-        ttk.Label(bar,text='Search questions').pack(side='left')
-        self.query=tk.StringVar(); ttk.Entry(bar,textvariable=self.query,width=30).pack(side='left',padx=8)
-        self.unit=tk.StringVar(value='All units')
-        box=ttk.Combobox(bar,textvariable=self.unit,values=('All units','Module 1','Module 2'),state='readonly',width=16);box.pack(side='left')
-        ttk.Button(bar,text='Filter',command=self.refresh_bank).pack(side='left',padx=8)
-        self.query.trace_add('write',lambda *_:self.refresh_bank());box.bind('<<ComboboxSelected>>',lambda _:self.refresh_bank())
-        tree_frame=ttk.Frame(f);tree_frame.pack(fill='both',expand=True)
-        columns=('id','unit','kind','marks','difficulty','prompt')
-        self.tree=ttk.Treeview(tree_frame,columns=columns,show='headings',height=7,selectmode='browse')
-        for name,width in zip(columns,(80,90,105,55,80,420)):
-            self.tree.heading(name,text=name.title());self.tree.column(name,width=width,minwidth=45,stretch=name=='prompt')
-        scroll=ttk.Scrollbar(tree_frame,orient='vertical',command=self.tree.yview);self.tree.configure(yscrollcommand=scroll.set)
-        self.tree.pack(side='left',fill='both',expand=True);scroll.pack(side='right',fill='y')
-        self.tree.bind('<<TreeviewSelect>>',self.show_question)
-        ttk.Label(f,text='Question and teacher answer').pack(anchor='w',pady=(10,4))
-        self.detail=ScrolledText(f,height=10,wrap='word',font=('Consolas',10),state='disabled');self.detail.pack(fill='both',expand=True)
-        bar=ttk.Frame(f);bar.pack(fill='x',pady=(10,0))
-        for name in ('Add question','Edit question','Approve','Archive','Import CSV'):
-            ttk.Button(bar,text=name,state='disabled').pack(side='left',padx=(0,5))
-        self.label(f,'Editing and import are scheduled for 24–25 October. Demo review status does not mean faculty approval.').pack(anchor='w',pady=(5,0))
-        self.refresh_bank()
-
-    def refresh_bank(self):
-        if not hasattr(self,'tree'): return
-        self.tree.delete(*self.tree.get_children())
-        self.visible={}
-        for q in self.repo.questions():
-            if self.unit.get()!='All units' and q['unit']!=self.unit.get(): continue
-            if self.query.get().casefold() not in (q['id']+' '+q['prompt']+' '+q['topic']).casefold(): continue
-            self.visible[q['id']]=q
-            self.tree.insert('', 'end', iid=q['id'], values=(q['id'],q['unit'],q['kind'],q['marks'],q['difficulty'],q['prompt'].replace('\n',' ')))
-        if hasattr(self,'detail'): self.set_text(self.detail,'Select a question to read its prompt, answer and rubric.')
+        self.bank_panel = BankPanel(self.frames['Question bank'], self.repo)
 
     def set_text(self, widget, text):
         widget.configure(state='normal');widget.delete('1.0','end');widget.insert('1.0',text);widget.configure(state='disabled')
-
-    def show_question(self, _=None):
-        selected=self.tree.selection()
-        if not selected:return
-        q=self.visible[selected[0]]
-        options='\n'.join(f"{o['id']}. {o['text']}" for o in q['options'])
-        text=f"{q['id']} | {q['unit']} | {q['difficulty']} | {q['marks']} marks\n\n{q['prompt']}\n{options}\n\nMODEL ANSWER\n{q['answer']}\n\nMARKING GUIDANCE\n{q['rubric']}\n\nREVIEW\n{q['review_note']}"
-        self.set_text(self.detail,text)
 
     def setup(self):
         f=self.frames['Paper setup']
@@ -128,7 +97,9 @@ class Application:
 
     def availability_screen(self):
         f=self.frames['Availability']
-        self.label(f,'The default check includes technically reviewed sample questions in this demo workspace. Production eligibility will require instructor-approved, non-demo questions.').pack(anchor='w',pady=(0,12))
+        self.label(f,'This example check includes approved questions and technically reviewed demo samples. For a teacher-only check, uncheck Include demo samples.').pack(anchor='w',pady=(0,12))
+        self.include_demo = tk.BooleanVar(value=True)
+        ttk.Checkbutton(f,text='Include demo samples',variable=self.include_demo).pack(anchor='w',pady=(0,8))
         self.result=ScrolledText(f,height=18,wrap='word',font=('Consolas',11),state='disabled');self.result.pack(fill='both',expand=True)
         self.set_text(self.result,'Open Paper setup and choose Check availability.')
         row=ttk.Frame(f);row.pack(fill='x',pady=12)
@@ -146,7 +117,7 @@ class Application:
         except ValueError:
             self.set_text(self.result,'Please enter whole numbers for total marks and duration. Your entries have been preserved.')
             self.go('Availability');return
-        report=availability(bp,self.repo.questions(),include_demo=True)
+        report=availability(bp,self.repo.questions(),include_demo=self.include_demo.get())
         lines=['READY FOR LATER GENERATION' if report['valid'] else 'CHANGES NEEDED','']
         lines+=report['errors']
         for g in report['groups']:
@@ -162,13 +133,14 @@ class Application:
     def help_screen(self):
         f=self.frames['Help']
         text='''WHAT WORKS NOW
-• Browse and filter 40 demonstration questions.
+• Add, edit, search and filter your question bank.
+• Approve questions with a review note; archive or restore.
+• Preview CSV imports and save all valid records as drafts.
 • Inspect model answers and rubrics.
 • Check the example blueprint and view shortages or validation errors.
 • Reopen the app without duplicating or overwriting seeded questions.
 
 WHAT COMES NEXT
-24–25 Oct: editing, approval, archive and CSV import.
 26–27 Oct: editable blueprints and generation.
 28–31 Oct: review, history, PDF export and backups.
 
@@ -181,5 +153,11 @@ Ctrl+1 Home, Ctrl+2 Question bank, Ctrl+3 Paper setup.
 Use Tab / Shift+Tab to move through controls.
 
 VERSION
-0.1.0 — Foundation milestone. Python standard library only.'''
+0.2.0 — Question-bank milestone. Python standard library only.
+
+REVIEW AND IMPORT
+New/imported questions are drafts. Editing content resets approval.
+Restore returns an archived question to draft. Demo origin is retained.
+CSV: UTF-8, comma-separated, maximum 1,000 records / 2 MiB.
+A file with any errors is not imported. No rows are overwritten.'''
         box=ScrolledText(f,wrap='word',font=('Segoe UI',11));box.pack(fill='both',expand=True);self.set_text(box,text)

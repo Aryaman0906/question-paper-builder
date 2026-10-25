@@ -1,0 +1,5 @@
+﻿id,subject,unit,topic,kind,marks,difficulty,prompt,answer,rubric,option_a,option_b,option_c,option_d,correct_option
+IMPORT-001,Python Programming,Module 1,Range,MCQ,2,Easy,"How many values are produced by range(2, 9, 2)?","Four values: 2, 4, 6, 8. Option B.",2 marks for B; 0 for any other option.,3,4,5,7,B
+IMPORT-002,Python Programming,Module 2,Functions and strings,Coding,-4,Hard,"Write a function count_vowels(text) that returns the number of English vowels in a string, ignoring case.
+Example: count_vowels(""A cup of TEA"") returns 5.","def count_vowels(text):
+    return sum(1 for ch in text.lower() if ch in ""aeiou"")","1 mark: valid function and return; 1: case normalization; 1: vowel membership; 1: correct counting, including empty input.",,,,,

@@ -1,91 +1,84 @@
 # Question Paper Builder
 
-**Version 0.1.0 — the 22–23 October foundation milestone**  
+**Version 0.2.0 — Phase 2: question-bank management and CSV import**  
 Aryaman Kundra · Roll number 2445591  
 Assigned project: Question Paper Generation & Difficulty Balancing System
 
-This is a runnable starter and design package, not the completed submission. It includes the frozen first-version scope, navigable Tkinter screen sketches, SQLite schema, tested blueprint rules and 40 original demonstration questions with model answers and rubrics.
+This release implements the next checklist milestone, scheduled for **24–25 October**, following the completed 22–23 October foundations. It is a working question-bank increment; paper generation and PDF export are still later milestones.
 
 ## Start on Windows
 
-1. Extract the entire ZIP. Keep `main.py`, `paperbuilder` and `data` together.
-2. Open a terminal in the extracted `question_paper_builder` folder.
-3. Check the interpreter and Tk installation:
+1. Extract the entire ZIP into a new folder. Keep `main.py`, `paperbuilder` and `data` together.
+2. Open a terminal inside the extracted `question_paper_builder` folder.
+3. Check that your Python installation has Tk:
 
 ```powershell
 py -3.12 -m tkinter
 ```
 
-4. Close the Tk test window, then run:
+4. Close the test window, then run:
 
 ```powershell
 py -3.12 main.py
 ```
 
-Alternatively, double-click `run_windows.bat` if Python 3.12 is registered with the Windows launcher. No pip packages are needed for this milestone. Tkinter comes with the standard Windows Python installer when Tcl/Tk support is selected.
+You can also double-click `run_windows.bat`. No pip packages are needed. If the launcher is unavailable, use your installed `python` executable for both `python -m tkinter` and `python main.py`. In VS Code, select that same interpreter. If Tk is missing, repair the Python installation with Tcl/Tk support; do not install a pip package named tkinter.
 
-If `py` is unavailable, use your working Python executable directly:
+## What works in this release
 
-```powershell
-python -c "import sys; print(sys.executable)"
-python -m tkinter
-python main.py
-```
+- Search and filter questions by subject, unit, review status and active/archive state.
+- Add and edit Short answer, Coding and four-option MCQ questions in a native GUI.
+- Preserve multiline question text, code indentation, model answers and marking guidance.
+- Validate required fields, positive whole marks, MCQ options and duplicate IDs/prompts.
+- Approve questions with a reviewer name; content edits reset approval to draft.
+- Archive and restore records; restored records need review again.
+- Save a CSV template, preview every imported row, see errors and import a valid batch atomically.
+- Detect stale edits from another app window and prevent accidental overwrites.
+- Check the example 40-mark blueprint with optional demo samples.
 
-Use the same interpreter for all three commands. In VS Code, choose that interpreter with **Python: Select Interpreter**. Do not install a pip package named tkinter to repair a missing Tk installation.
+All new or imported records begin as drafts. Approval records a review note; it is a local workflow, not a login or identity-verification system. Difficulty is a human estimate, not an empirically calibrated score. The 40 bundled demo records retain their demo origin even if edited or approved and remain excluded from production-only availability checks.
 
-## What you can do now
+## Try the question-bank workflow
 
-- Browse, filter and inspect 40 sample questions and their marking guidance.
-- View a six-row blueprint for a 40-mark, 13-question paper.
-- Change total marks, time or difficulty percentages to examine validation.
-- Check available questions and exact shortages for each selection group.
-- Navigate all planned screens; unfinished actions are visibly disabled.
-- Close and reopen without duplicate seeding or overwriting existing question edits.
+1. Open **Question bank → Add question**. Complete Details and Question and answer. For MCQs, also fill all four options and the correct option.
+2. Save. Inspect the draft's answer and marking guidance, then choose **Approve** and enter the reviewer's name.
+3. Edit the answer and save: its status becomes Draft again.
+4. Archive it, switch Show to Archived, then restore it: it returns as a draft.
+5. Choose **Import CSV**, open `data/Example_Questions.csv`, inspect all three rows and select **Import all as drafts**.
+6. Open `data/Invalid_Example_Do_Not_Import.csv`: import stays disabled because a row has negative marks. Use a fresh test database if you want to isolate this error from duplicate-ID errors after step 5.
 
-The application starts in a clearly labelled **demo workspace**. Sample questions have `demo_reviewed` status, not instructor approval. Ordinary production eligibility excludes them; the prototype's availability check explicitly enables demo content.
+The supplied CSV examples are original sample material for testing and review. They are not teacher-approved exam content. Import does not execute any Python text in a question or answer.
 
-## What is intentionally unfinished
+## Upgrading from Phase 1
 
-Question editing/approval/archiving, CSV import, editable blueprint rows and saved templates, actual question selection, paper review/replacement, saved-paper services, PDF export, backup/restore, packaging as an EXE, and user acceptance testing. These belong to the subsequent checklist milestones.
-
-Do not use this starter to prepare a real exam yet.
-
-## Explore the documents
-
-- `docs/MILESTONE_22_23.md`: completed objectives, evidence and limitations.
-- `docs/SCOPE.md`: frozen scope, decisions and acceptance criteria.
-- `docs/GUI_WIREFRAMES.html`: open in a browser for seven static screen sketches.
-- `docs/DESIGN.md`: data model, layers, snapshot contract and generator plan.
-- `docs/BANK_REVIEW.md`: demonstration-bank coverage and review method.
-- `docs/TEST_RESULTS.md`: recorded verification and remaining manual checks.
-
-## Test without opening a window
-
-From the project folder:
-
-```powershell
-py -3.12 -m unittest discover -s tests -v
-py -3.12 main.py --check
-```
-
-`--check` validates the demonstration blueprint against the sample bank; it does not generate a paper. It exits with 0 on success and 1 for validation/availability failure.
-
-To use a separate test database:
-
-```powershell
-py -3.12 main.py --check --db .\test_demo.sqlite3
-```
-
-The application uses a dedicated demo database by default:
+Close the old app before opening this release. The default database location is unchanged:
 
 - Windows: `%LOCALAPPDATA%\QuestionPaperBuilder\demo_v1.sqlite3`
 - Other platforms: `~/.local/share/QuestionPaperBuilder/demo_v1.sqlite3`
 
-Data is separate from the source folder. Startup adds missing sample IDs but never overwrites existing records. The ZIP contains JSON fixtures, not a personal or live exam database.
+The legacy filename is retained to preserve your work. On the first open, schema version 1 is copied to a timestamped `.before-v2-…bak` file beside the database, then upgraded to version 2 with per-question revision numbers. Existing content and archive/review states are retained. Do not use the old app to edit the upgraded database. Keep the backup until you have checked your records. A general backup/restore GUI belongs to a later milestone.
 
-## Development status
+Data is outside the source folder. Startup adds missing demonstration IDs without overwriting existing records. No personal/live database is included in this ZIP.
 
-16 automated foundation tests passed on Python 3.12.14. Coding model answers were exercised with trusted local fixtures. Tkinter imports and source compilation were checked. **The actual GUI window was not launched or visually tested here because this environment has no display server. Windows launch, scaling and keyboard usability remain manual checks.** The HTML screen sketches are design references, not screenshots of a tested application.
+## Tests and a separate demo database
 
-Next planned milestone: **24–25 October — question-bank editing, approval, archive and validated CSV import.**
+```powershell
+py -3.12 -m unittest discover -s tests -v
+py -3.12 main.py --check --db .\test_demo.sqlite3
+py -3.12 main.py --db .\practice.sqlite3
+```
+
+`--check` validates the example blueprint; it does not generate a paper. Exit codes: 0 success, 1 availability failure, 2 startup/database/display error.
+
+**47 automated tests passed on Python 3.12.14.** Source compilation and GUI-module imports passed. Native windows could not be displayed in the build environment; Windows launch, resizing, scaling and keyboard checks are still required. User satisfaction has not yet been measured. See `docs/TEST_RESULTS.md` for the manual checklist and acceptance targets.
+
+## Documents and next phase
+
+- `docs/MILESTONE_24_25.md`: this phase's deliverables and completion checklist.
+- `docs/CSV_IMPORT.md`: format, limits, error handling and examples.
+- `docs/TEST_RESULTS.md`: automated evidence and manual acceptance checklist.
+- `docs/DESIGN.md`: schema, migration and future generation contracts.
+- `docs/SCOPE.md`, `docs/BANK_REVIEW.md`: scope and sample question coverage.
+- `docs/MILESTONE_22_23.md`, `docs/GUI_WIREFRAMES.html`: historical Phase 1 evidence/design sketches.
+
+**Next: 26–27 October — editable blueprints and difficulty-balanced paper generation.** Review/replacement/history, separate student/answer-key PDFs, backup/restore and final user acceptance follow. The final project report and submission ZIP are not yet complete.

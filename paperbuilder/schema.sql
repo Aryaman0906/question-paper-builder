@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS questions (
     is_demo INTEGER NOT NULL DEFAULT 0 CHECK(is_demo IN (0,1)),
     active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
     prompt_hash TEXT NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 1 CHECK(revision > 0),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK(review_status != 'demo_reviewed' OR is_demo = 1)
@@ -62,4 +63,4 @@ CREATE TABLE IF NOT EXISTS papers (
 CREATE TRIGGER IF NOT EXISTS immutable_paper
     BEFORE UPDATE ON papers
     BEGIN SELECT RAISE(ABORT, 'Saved paper snapshots are immutable; create a revision.'); END;
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;

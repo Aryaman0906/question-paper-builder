@@ -1,14 +1,14 @@
-# Foundations and implementation contracts
+# Implementation contracts — Phase 2
 
 ## Layers
 
-`main.py` opens the dedicated demo database and GUI. `gui.py` contains presentation and navigation. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access. Later, add `generation.py`, `papers.py` and `pdf_export.py` without moving selection logic into widget callbacks.
+`main.py` opens the local question database and GUI. `gui.py` contains presentation and navigation. `validation.py` contains pure rules; it has no Tkinter or database dependency. `storage.py` owns SQLite access, bank mutations and migrations. `question_bank.py` contains bank/editor/import widgets, and `csv_import.py` owns CSV parsing and preview. All GUI writes use repository services. Later, add `generation.py`, `papers.py` and `pdf_export.py` without moving selection logic into widget callbacks.
 
 ## Database model
 
 | Table | Key | Purpose | Implemented now |
 |---|---|---|---|
-| questions | id | Question content, labels, answer/rubric and review state | Schema, sample seeding and read service |
+| questions | id | Question content, labels, answer/rubric and review state | Create/edit/approve/archive, validated atomic import, sample seeding and reads |
 | blueprints | id | Exam metadata and difficulty targets | Schema reserved; editable/save service pending |
 | blueprint_rows | blueprint_id, position | Ordered section and selection requirements | Schema reserved; sample JSON is used now |
 | papers | id | Full immutable saved-paper snapshot | Schema/immutability trigger; save/reopen service pending |
@@ -29,9 +29,9 @@ Question prompt hashing normalizes Unicode and line endings and strips only oute
 - `correct_option_id`: one valid MCQ option ID; null otherwise.
 - `review_status`: draft, demo_reviewed or approved.
 - `is_demo`, `active`: separate flags; demonstration review cannot masquerade as approval.
-- `review_note`, `created_at`, `updated_at`, `prompt_hash`: review context and maintenance fields. Future edit services must update `updated_at` explicitly.
+- `review_note`, `created_at`, `updated_at`, `prompt_hash`: review context and maintenance fields. Mutation services update `updated_at` and increment `revision` explicitly.
 
-SQL constraints enforce basic scalar invariants; application validation enforces complete MCQs and cross-field rules. Future import/CRUD services must always call the same validator before writing.
+SQL constraints enforce basic scalar invariants; application validation enforces complete MCQs and cross-field rules. Import and bank mutation services call the same validator before writing.
 
 ### Snapshot contract for the later paper service
 
@@ -81,3 +81,14 @@ Do not add lock/exclude families, flexible unit alternatives or semantic-duplica
 - Exam blueprints: https://crlt.umich.edu/designing-effective-exams
 
 The project checklist contains the broader assessment, accessibility and export references. Recommendations here are implementation decisions, not certifications or instructor-mandated rules.
+
+
+## Schema 2 migration and bank transactions
+
+`questions.revision` is a positive integer starting at 1. Content/status changes increment it. Editor saves, approval and archive/restore require the displayed revision to match the current record. A stale operation fails without overwriting the newer record. No-op content saves preserve approval and revision.
+
+A schema-v1 database is backed up with SQLite's backup API to a timestamped sibling before `ALTER TABLE` adds revision and advances `PRAGMA user_version` to 2 in a transaction. Unsupported future versions are refused. Close other app copies before upgrade; a migration backup is not a general backup/restore UI.
+
+Every bank mutation runs under `BEGIN IMMEDIATE` and the connection transaction context. CSV imports snapshot the preview, repeat validation/duplicate checks under that lock and commit all rows together. Any exception rolls back the batch. New records cannot inject approval or demo origin. Archive retains IDs; restoring rechecks prompt uniqueness and sets Draft. Demo provenance remains immutable through the public bank API.
+
+The application does not evaluate or execute question/answer text. Reviewer names are self-entered local notes, without authentication. Difficulty labels are human judgments. CSV file/row limits bound ordinary import work; semantic duplicate detection and empirical difficulty calibration remain outside this milestone.

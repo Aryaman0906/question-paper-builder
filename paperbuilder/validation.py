@@ -2,6 +2,7 @@
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 import hashlib
+import re
 import unicodedata
 
 DIFFICULTIES = ('Easy', 'Medium', 'Hard')
@@ -19,7 +20,13 @@ def prompt_hash(text):
 
 
 def question_errors(q):
+    if not isinstance(q, dict):
+        return ["Question must be a record."]
     errors = []
+    if isinstance(q.get("id"), str) and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}", q["id"]):
+        errors.append("ID must be 1–64 letters, numbers, dots, underscores or hyphens, starting with a letter or number.")
+    if not isinstance(q.get("topic", ""), str):
+        errors.append("Topic must be text.")
     for field in ('id', 'subject', 'unit', 'prompt', 'answer', 'rubric'):
         if not isinstance(q.get(field), str) or not q[field].strip():
             errors.append(f'{field} is required.')
