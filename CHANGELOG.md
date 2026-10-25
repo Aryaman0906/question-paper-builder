@@ -1,5 +1,17 @@
 # Project updates
 
+## Phase 3 — Editable blueprints and balanced generation (26–27 October objectives)
+
+Implemented on 25 October 2026.
+
+- Added paper metadata, instructions, difficulty targets and ordered row editing.
+- Added atomic save/load of new blueprint template copies in the existing schema.
+- Added unique fixed-group selection with aggregated demand and optional seeds.
+- Rechecked every generated paper independently against row counts, eligibility, marks and difficulty.
+- Added separate student/teacher previews, demo labelling and achieved balance summaries.
+- Added a headless demo-generation command and expanded tests from 47 to 75.
+- GUI rendering and user satisfaction remain unverified; temporary previews are not saved to paper history.
+
 ## Phase 2 — Question-bank GUI and CSV import (24–25 October objectives)
 
 Implemented on 23 October at the student's request to continue ahead of the planned dates.

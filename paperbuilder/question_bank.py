@@ -201,9 +201,9 @@ class ImportDialog(tk.Toplevel):
 
 
 class BankPanel(ttk.Frame):
-    def __init__(self,parent,repository):
+    def __init__(self,parent,repository,on_change=None):
         super().__init__(parent);self.pack(fill='both',expand=True)
-        self.repo=repository;self.visible={};self.editor=None
+        self.repo=repository;self.visible={};self.editor=None;self.on_change=on_change
         top=ttk.Frame(self);top.pack(fill='x')
         ttk.Label(top,text='Search').pack(side='left')
         self.query=tk.StringVar();search=ttk.Entry(top,textvariable=self.query,width=34);search.pack(side='left',padx=8)
@@ -275,6 +275,7 @@ class BankPanel(ttk.Frame):
         if select in self.visible:
             self.tree.selection_set(select);self.tree.see(select);self.show_question()
         if message:
+            if self.on_change:self.on_change()
             self.status.set(message+(' Clear filters to see it.' if select and select not in self.visible else ''))
 
     def selected(self):

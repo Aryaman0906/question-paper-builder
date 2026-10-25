@@ -71,7 +71,11 @@ def selection_key(subject, row):
 
 
 def blueprint_errors(bp):
+    if not isinstance(bp, dict):
+        return ['Blueprint must be a record.']
     errors = []
+    if not isinstance(bp.get('instructions', ''), str):
+        errors.append('Instructions must be text.')
     for field in ('title', 'subject'):
         if not isinstance(bp.get(field), str) or not bp[field].strip():
             errors.append(f'{field} is required.')
@@ -96,6 +100,8 @@ def blueprint_errors(bp):
     rows = bp.get('rows')
     if not isinstance(rows, list) or not rows:
         return errors + ['At least one blueprint row is required.']
+    if len(rows) > 100:
+        return errors + ['Use at most 100 blueprint rows.']
     achieved = Counter()
     all_rows_valid = True
     for index, row in enumerate(rows, 1):
@@ -109,6 +115,8 @@ def blueprint_errors(bp):
             all_rows_valid = False
             continue
         achieved[row['difficulty']] += row['marks'] * row['count']
+    if all_rows_valid and sum(row['count'] for row in rows) > 1000:
+        errors.append('A paper can contain at most 1,000 questions.')
     if all_rows_valid and positive_int(bp.get('total_marks')):
         if sum(achieved.values()) != bp['total_marks']:
             errors.append(f"Rows allocate {sum(achieved.values())} marks, but the paper requests {bp['total_marks']}.")
@@ -120,6 +128,12 @@ def blueprint_errors(bp):
                 elif achieved[level] != target:
                     errors.append(f'{level}: rows allocate {achieved[level]} marks; target is {target}.')
     return errors
+
+
+def eligible(q, include_demo=False):
+    return (q.get('active', True) and (include_demo or not q.get('is_demo'))
+            and (q.get('review_status') == 'approved' or
+                 (include_demo and q.get('is_demo') and q.get('review_status') == 'demo_reviewed')))
 
 
 def availability(bp, questions, include_demo=False):
@@ -136,12 +150,7 @@ def availability(bp, questions, include_demo=False):
         if q['id'] in seen:
             continue
         seen.add(q['id'])
-        if not q.get('active', True):
-            continue
-        if q.get('is_demo') and not include_demo:
-            continue
-        if q.get('review_status') == 'approved' or (
-                include_demo and q.get('is_demo') and q.get('review_status') == 'demo_reviewed'):
+        if eligible(q, include_demo):
             supply[selection_key(q['subject'], q)] += 1
     groups = []
     for key, required in demand.items():
