@@ -97,6 +97,39 @@ class WorkspaceTests(unittest.TestCase):
         self.assertTrue(panel.edit_button.instate(['!disabled']))
         self.assertEqual(tuple(panel.tree.cget('displaycolumns'))[:2], ('id', 'prompt'))
 
+    def test_help_topics_and_navigation_do_not_change_work(self):
+        original = self.repo.questions()
+        blueprint = self.app.setup_panel.raw()
+        self.app.go('Help'); self.root.update()
+        panel = self.app.help_panel
+        for topic, button in panel.topic_buttons.items():
+            button.invoke(); self.root.update()
+            self.assertEqual(panel.current_topic.get(), topic)
+            self.assertTrue(panel.article.winfo_children())
+        panel.show_topic('start'); self.root.update()
+        actions = [w for w in panel.article.winfo_children() if w.winfo_class() == 'TButton']
+        actions[0].invoke(); self.root.update()
+        self.assertEqual(self.app.notebook.select(), str(self.app.pages['Question bank']))
+        self.assertEqual(self.repo.questions(), original)
+        self.assertEqual(self.app.setup_panel.raw(), blueprint)
+        self.assertIsNone(self.app.paper)
+
+    def test_empty_studio_becomes_exact_preview_and_history_keeps_identity(self):
+        self.app.go('Review'); self.root.update()
+        self.assertTrue(self.app.review_empty.winfo_ismapped())
+        self.assertFalse(self.app.review_content.winfo_ismapped())
+        self.generate()
+        self.assertFalse(self.app.review_empty.winfo_ismapped())
+        self.assertTrue(self.app.review_content.winfo_ismapped())
+        self.assertEqual(self.app.student_text.get('1.0', 'end-1c'), preview_text(self.app.paper))
+        self.app.save_current()
+        identifier = self.app.paper['paper_id']
+        self.app.go('Saved papers'); self.root.update()
+        self.app.history.tree.selection_set(identifier); self.root.update()
+        self.assertIn(identifier, self.app.history.selected_detail.get())
+        self.assertEqual(self.app.history.tree.item(identifier, 'values')[-1], identifier)
+        self.assertEqual(load_paper(self.repo, identifier), self.app.paper)
+
     def test_small_window_overflow_keeps_actions_reachable(self):
         self.root.geometry('960x680'); self.root.update()
         for title in self.app.pages:

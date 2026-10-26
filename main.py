@@ -9,7 +9,7 @@ from paperbuilder.display import enable_windows_dpi_awareness
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Question Paper Builder 0.6.1 desktop workspace')
+    parser = argparse.ArgumentParser(description='Question Paper Builder 0.6.2 desktop workspace')
     parser.add_argument('--db', type=Path, help='Optional demo database location')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--generate-demo', action='store_true', help='Generate a checked demo paper as JSON without opening a window')

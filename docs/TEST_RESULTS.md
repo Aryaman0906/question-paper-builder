@@ -1,3 +1,15 @@
+# 0.6.2 presentation refinements
+
+Date: 26 October 2026. **193 tests passed, zero skipped**, Python 3.12.3 / Tk 8.6 on Linux with a virtual X display and existing PDF dependencies.
+
+The added checks exercise every Help topic and navigation without changing bank, blueprint or paper state; the empty-to-populated Paper studio transition with exact preview content; saved-history identity preservation; and UTC display formatting with safe fallback for unknown/naive timestamps. The existing service, export, backup, wheel and DPI checks remain in the full suite.
+
+Actual application screens were rendered at 96 and 144 DPI-equivalent Tk scaling using a temporary demo database. Reviewed Help, empty and populated studio, overview, availability and history. A clipped history date at enlarged text was fixed by measuring its width from the active font. This is not native Windows verification and does not measure user satisfaction or retention.
+
+Windows acceptance: launch 0.6.2, visit Help topics and keyboard shortcuts, navigate from its quick-start actions, generate/save/reopen a paper, and inspect the display at normal scaling. No new dependencies or database changes are required.
+
+---
+
 # 0.6.1 rendering and input fixes
 
 Date: 26 October 2026. **189 tests passed, zero skipped**, Python 3.12.3 / Tk 8.6 on Linux with a virtual X display and the existing PDF dependencies.

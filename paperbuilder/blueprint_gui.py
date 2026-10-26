@@ -68,7 +68,7 @@ class BlueprintPanel(ttk.Frame):
         self.saved_combo=ttk.Combobox(top,textvariable=self.saved,state='readonly',width=22)
         self.saved_combo.pack(side='left',fill='x',expand=True)
         ttk.Button(top,text='Load',command=self.load_saved).pack(side='left',padx=4)
-        ttk.Button(top,text='Refresh list',command=self.refresh_saved).pack(side='left')
+        ttk.Button(top,text='Refresh list',style='Quiet.TButton',command=self.refresh_saved).pack(side='left')
         ttk.Button(top,text='Save template copy',command=self.save).pack(side='left',padx=4)
         tabs=ttk.Notebook(self);self.tabs=tabs;tabs.pack(fill='both',expand=True)
         details=ttk.Frame(tabs,padding=12);selection=ttk.Frame(tabs,padding=10)
@@ -77,7 +77,7 @@ class BlueprintPanel(ttk.Frame):
         for i,(field,label) in enumerate((('title','Paper title'),('subject','Subject'),('total_marks','Total marks'),('duration_minutes','Time (minutes)'))):
             ttk.Label(details,text=label).grid(row=i,column=0,sticky='w',pady=5,padx=(0,12))
             var=tk.StringVar();self.vars[field]=var
-            ttk.Entry(details,textvariable=var).grid(row=i,column=1,sticky='ew',pady=5)
+            ttk.Entry(details,textvariable=var,width=12 if field in ('total_marks','duration_minutes') else 30).grid(row=i,column=1,sticky='w' if field in ('total_marks','duration_minutes') else 'ew',pady=5)
         targets=ttk.Frame(details);targets.grid(row=4,column=0,columnspan=2,sticky='ew',pady=8)
         for i,d in enumerate(DIFFICULTIES):
             ttk.Label(targets,text=d+' %').grid(row=0,column=2*i,padx=5)
@@ -102,8 +102,8 @@ class BlueprintPanel(ttk.Frame):
             ttk.Button(controls,text=text,command=command).pack(side='left',padx=(0,5))
         self.summary=tk.StringVar();ttk.Label(self,textvariable=self.summary,wraplength=1000).pack(anchor='w',pady=6)
         bottom=ttk.Frame(self);bottom.pack(fill='x')
-        ttk.Button(bottom,text='New blank',command=self.new_blank).pack(side='left')
-        ttk.Button(bottom,text='Load demo blueprint',command=self.load_demo).pack(side='left',padx=6)
+        ttk.Button(bottom,text='New blank',style='Quiet.TButton',command=self.new_blank).pack(side='left')
+        ttk.Button(bottom,text='Load demo blueprint',style='Quiet.TButton',command=self.load_demo).pack(side='left',padx=6)
         ttk.Button(bottom,text='Check availability  →',style='Primary.TButton',command=on_check).pack(side='right')
         self.status=tk.StringVar(value='Demo blueprint loaded. Generation excludes demo questions unless you opt in.')
         ttk.Label(self,textvariable=self.status,wraplength=1000).pack(anchor='w',pady=(6,0))

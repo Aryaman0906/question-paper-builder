@@ -53,7 +53,8 @@ class WheelTests(unittest.TestCase):
         self.assertGreater(self.page.canvas.xview()[0], 0)
 
     def test_nested_text_scrolls_once_then_parent_at_boundary(self):
-        self.text.yview_scroll(3, 'units'); expected = self.text.yview()
+        # Tk resolves text line metrics asynchronously; compare settled views.
+        self.text.yview_scroll(3, 'units'); self.root.update(); expected = self.text.yview()
         self.text.yview_moveto(0); self.root.update()
         parent = self.page.canvas.yview()
         self.wheel(self.text)

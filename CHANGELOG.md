@@ -1,3 +1,12 @@
+## 0.6.2 — Presentation and guidance (26 October 2026)
+
+- Replace the Help text wall with seven task-based topics, quick-start navigation, FAQs and keyboard guidance.
+- Give empty Paper studio a clear starting guide; reveal the existing workspace after generation or opening a saved paper.
+- Compact the overview, bring recent papers forward, group generation options and refine action hierarchy and surfaces.
+- Format display dates in explicit UTC and show full IDs in a selected-paper detail panel. Stored values are unchanged.
+- Preserve the Python/Tkinter stack, existing business rules, snapshot text, database schema, DPI handling and wheel routing.
+- 193 tests pass under Linux/Tk 8.6. Actual app screenshots inspected at 96 and 144 DPI-equivalent Tk scaling; native Windows acceptance remains a user check.
+
 # Project updates
 
 ## 0.6.1 — Whole-window rendering and wheel scrolling (26 October 2026)

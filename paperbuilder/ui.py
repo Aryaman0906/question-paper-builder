@@ -40,6 +40,7 @@ def setup_theme(root):
                     bordercolor=LINE, lightcolor=LINE, darkcolor=LINE)
     style.configure('TFrame', background=BG)
     style.configure('Card.TFrame', background=SURFACE)
+    style.configure('Panel.TFrame', background=SURFACE, borderwidth=1, relief='solid')
     style.configure('Nav.TFrame', background=NAV)
     style.configure('TLabel', background=BG, foreground=INK)
     style.configure('Muted.TLabel', foreground=MUTED)
@@ -59,6 +60,9 @@ def setup_theme(root):
                     font=(family, 11, 'bold'), focuscolor=SURFACE)
     style.map('Primary.TButton', background=[('disabled', '#E4E0F1'), ('pressed', '#413298'), ('active', '#4D3DAC')],
               foreground=[('disabled', '#777089'), ('!disabled', SURFACE)])
+    style.configure('Quiet.TButton', background=BG, foreground=MUTED, borderwidth=0)
+    style.configure('Link.TButton', background=SURFACE, foreground=ACCENT, borderwidth=0)
+    style.configure('Caption.TLabel', foreground=MUTED, font=(family, 10))
     style.configure('Danger.TButton', foreground='#A02E37')
     style.configure('Nav.TButton', background=NAV, foreground='#C3CBDD', anchor='w',
                     borderwidth=0, padding=(16, 13), focuscolor='#C4B9FF')

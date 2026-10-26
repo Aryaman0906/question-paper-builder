@@ -4,6 +4,8 @@ import sqlite3
 from tkinter import ttk, messagebox, filedialog, font
 from pathlib import Path
 from .ui import ScrolledText, ScrollPage, setup_theme, size_main_window, decorate_text, NAV, BG
+from .help_gui import HelpPanel
+from .presentation import format_timestamp
 from .blueprints import list_blueprints
 from .papers import list_papers
 from . import __version__
@@ -118,16 +120,16 @@ class Application:
 
     def home(self):
         f = self.frames['Home']
-        hero = tk.Frame(f, background='#EAE6FA', padx=24, pady=22)
+        hero = tk.Frame(f, background='#EAE6FA', padx=24, pady=16)
         hero.pack(fill='x', pady=(0, 18))
-        tk.Label(hero, text='THOUGHTFUL PAPERS. BALANCED ASSESSMENT.', background='#EAE6FA',
+        tk.Label(hero, text='YOUR NEXT PAPER', background='#EAE6FA',
                  foreground='#6656A4', font=(self.font_family, 9, 'bold')).pack(anchor='w')
-        tk.Label(hero, text='Your next paper starts here.', background='#EAE6FA',
-                 foreground='#292344', justify='left', font=(self.font_family, 22, 'bold')).pack(anchor='w', pady=(8, 6))
-        tk.Label(hero, text='Build a blueprint. Choose the right questions. Make every mark count.',
+        tk.Label(hero, text='A clear plan. A balanced paper.', background='#EAE6FA',
+                 foreground='#292344', justify='left', font=(self.font_family, 19, 'bold')).pack(anchor='w', pady=(8, 6))
+        tk.Label(hero, text='Start with your blueprint, or pick up a saved paper below.',
                  background='#EAE6FA', foreground='#5F5779', wraplength=740, justify='left').pack(anchor='w')
         ttk.Button(hero, text='Create a paper  →', style='Primary.TButton',
-                   command=lambda: self.go('Paper setup')).pack(anchor='w', pady=(18, 0))
+                   command=lambda: self.go('Paper setup')).pack(anchor='w', pady=(12, 0))
         stats = ttk.Frame(f); stats.pack(fill='x', pady=(0, 20))
         self.stat_values = {}; stat_cards = []; workflow_cards = []
         for column, (key, title, detail) in enumerate((
@@ -136,32 +138,33 @@ class Application:
                 ('templates', 'Blueprint templates', 'Saved paper structures'),
                 ('papers', 'Saved papers', 'Includes paper revisions'))):
             stats.columnconfigure(column, weight=1, uniform='stats')
-            card = ttk.Frame(stats, style='Card.TFrame', padding=(16, 14))
+            card = ttk.Frame(stats, style='Panel.TFrame', padding=(16, 10))
             stat_cards.append(card)
             card.grid(row=0, column=column, sticky='nsew', padx=(0, 10 if column < 3 else 0))
             var = tk.StringVar(value='—'); self.stat_values[key] = var
             ttk.Label(card, textvariable=var, style='Stat.TLabel').pack(anchor='w')
             ttk.Label(card, text=title, style='CardTitle.TLabel').pack(anchor='w', pady=(2, 5))
             ttk.Label(card, text=detail, style='CardMuted.TLabel', wraplength=165).pack(anchor='w')
-        ttk.Label(f, text='A simple workflow', style='Section.TLabel').pack(anchor='w', pady=(0, 10))
+        workflow_heading=ttk.Label(f, text='A simple workflow', style='Section.TLabel')
+        workflow_heading.pack(anchor='w', pady=(16, 10))
         workflow = ttk.Frame(f); workflow.pack(fill='x')
         for column, (number, title, detail, target) in enumerate((
                 ('01', 'Curate your bank', 'Add questions, check answers and approve content.', 'Question bank'),
                 ('02', 'Shape your paper', 'Set marks, difficulty targets and ordered selection rows.', 'Paper setup'),
                 ('03', 'Review & export', 'Check availability, generate and export separate PDFs.', 'Availability'))):
             workflow.columnconfigure(column, weight=1, uniform='steps')
-            card = ttk.Frame(workflow, style='Card.TFrame', padding=18)
+            card = ttk.Frame(workflow, style='Panel.TFrame', padding=18)
             workflow_cards.append(card)
             card.grid(row=0, column=column, sticky='nsew', padx=(0, 10 if column < 2 else 0))
             ttk.Label(card, text=number, style='Badge.TLabel').pack(anchor='w', pady=(0, 12))
             ttk.Label(card, text=title, style='CardTitle.TLabel').pack(anchor='w')
             ttk.Label(card, text=detail, style='CardMuted.TLabel', wraplength=220).pack(anchor='w', pady=(8, 14))
-            ttk.Button(card, text='Open  →', command=lambda t=target: self.go(t)).pack(anchor='w', side='bottom')
-        recent_header = ttk.Frame(f); recent_header.pack(fill='x', pady=(20, 8))
+            ttk.Button(card, text='Open  →', style='Link.TButton', command=lambda t=target: self.go(t)).pack(anchor='w', side='bottom')
+        recent_header = ttk.Frame(f); recent_header.pack(fill='x', pady=(0, 8), before=workflow_heading)
         ttk.Label(recent_header, text='Recently saved', style='Section.TLabel').pack(side='left')
-        ttk.Button(recent_header, text='View history  →', command=lambda: self.go('Saved papers')).pack(side='right')
+        ttk.Button(recent_header, text='View history  →', style='Quiet.TButton', command=lambda: self.go('Saved papers')).pack(side='right')
         self.recent_frame = ttk.Frame(f, style='Card.TFrame', padding=14)
-        self.recent_frame.pack(fill='x')
+        self.recent_frame.pack(fill='x', before=workflow_heading)
         self.dashboard_note = tk.StringVar()
         note_label=ttk.Label(f, textvariable=self.dashboard_note, style='Muted.TLabel', wraplength=850)
         note_label.pack(anchor='w', pady=(12, 0))
@@ -210,7 +213,7 @@ class Application:
             row = ttk.Frame(self.recent_frame, style='Card.TFrame'); row.pack(fill='x', pady=4)
             ttk.Button(row, text='Open paper', command=lambda identifier=paper['id']: self.open_saved(identifier)).pack(side='right', padx=(16, 0))
             ttk.Label(row, text=paper['title'], style='CardTitle.TLabel', wraplength=580).pack(anchor='w')
-            ttk.Label(row, text=('DEMO ONLY' if paper['is_demo'] else 'Production') + '  •  ' + paper['created_at'] + ' UTC',
+            ttk.Label(row, text=('DEMO ONLY' if paper['is_demo'] else 'Production') + '  •  ' + format_timestamp(paper['created_at']),
                       style='CardMuted.TLabel').pack(anchor='w', pady=(3, 0))
         self.dashboard_note.set('Sample questions are for demonstration. Use reviewed, approved non-demo questions for real exams.')
         self.home_reflow()
@@ -247,21 +250,26 @@ class Application:
                 if title == 'Home': self.refresh_home()
 
     def availability_screen(self):
-        f=self.frames['Availability']
-        self.label(f,'Production mode uses active, approved, non-demo questions. Enable demo mode to try the supplied samples. Your bank is checked again when generating.').pack(anchor='w',pady=(0,10))
-        controls=ttk.Frame(f);controls.pack(fill='x',pady=(0,10))
+        f = self.frames['Availability']
+        intro = ttk.Frame(f, style='Panel.TFrame', padding=18); intro.pack(fill='x', pady=(0, 16))
+        ttk.Label(intro, text='01   Choose your question source', style='CardTitle.TLabel').pack(anchor='w')
+        ttk.Label(intro, text='Real exams use active, approved, non-demo questions. For a practice run, enable the supplied samples.',
+                  style='CardMuted.TLabel', wraplength=740).pack(anchor='w', pady=(6, 12))
+        controls=ttk.Frame(intro, style='Card.TFrame');controls.pack(fill='x')
         self.include_demo=tk.BooleanVar(value=False)
         ttk.Checkbutton(controls,text='Demo mode (allow sample questions)',variable=self.include_demo,command=self.invalidate).pack(side='left')
-        ttk.Label(controls,text='Seed (optional)').pack(side='left',padx=(14,5))
-        self.seed=tk.StringVar();ttk.Entry(controls,textvariable=self.seed,width=22).pack(side='left')
+        ttk.Label(controls,text='Seed (optional)', style='CardMuted.TLabel').pack(side='left',padx=(14,5))
+        self.seed=tk.StringVar();ttk.Entry(controls,textvariable=self.seed,width=16).pack(side='left')
         self.seed.trace_add('write',lambda *_:self.invalidate())
-        self.result=ScrolledText(f,height=13,wrap='word',font=('Consolas',11),state='disabled');self.result.pack(fill='both',expand=True)
-        self.set_text(self.result,'READY WHEN YOU ARE\n\nChoose a blueprint in Paper setup, then select Check blueprint below.\n\nTrying the supplied sample? Enable Demo mode first. For a real exam, add and approve enough non-demo questions in your bank.')
+        ttk.Label(f, text='02   Check your blueprint', style='Section.TLabel').pack(anchor='w', pady=(0, 6))
+        ttk.Label(f, text='See which questions are available and what needs attention.', style='Muted.TLabel').pack(anchor='w', pady=(0, 12))
+        self.result=ScrolledText(f,height=9,wrap='word',state='disabled');self.result.pack(fill='both',expand=True)
+        self.set_text(self.result,'READY WHEN YOU ARE\n\nChoose your paper details and selection rows in Paper setup. Then check your blueprint here.\n\nYour results will show the required, available and missing questions for each selection group.')
         row=ttk.Frame(f);row.pack(fill='x',pady=12)
         ttk.Button(row,text='Check blueprint',command=self.check).pack(side='left')
-        ttk.Button(row,text='Edit setup',command=lambda:self.go('Paper setup')).pack(side='left',padx=8)
-        self.generate_button=ttk.Button(row,text='Generate paper',style='Primary.TButton',command=self.generate,state='disabled');self.generate_button.pack(side='left')
-        self.label(f,'A seed repeats selection only with the same eligible bank, blueprint and generator/runtime. Blank chooses a fresh seed. Different seeds may still select the same questions.').pack(anchor='w')
+        ttk.Button(row,text='Edit setup',style='Quiet.TButton',command=lambda:self.go('Paper setup')).pack(side='left',padx=8)
+        self.generate_button=ttk.Button(row,text='Generate paper  →',style='Primary.TButton',command=self.generate,state='disabled');self.generate_button.pack(side='right')
+        self.label(f,'Leave the seed blank for a fresh selection. A repeated seed requires the same eligible bank, blueprint and generator/runtime; different seeds can still choose the same questions.').pack(anchor='w',pady=(0,8))
 
     def check(self):
         try:
@@ -291,6 +299,9 @@ class Application:
     def show_paper(self, paper, saved):
         self.paper=paper
         self.paper_saved=saved
+        if hasattr(self, 'review_empty'):
+            self.review_empty.pack_forget()
+            self.review_content.pack(fill='both', expand=True)
         self.set_text(self.student_text,preview_text(paper))
         self.set_text(self.teacher_text,preview_text(paper,teacher=True))
         summary=paper['summary'];bp=paper['blueprint']
@@ -312,10 +323,30 @@ class Application:
         self.preview_tabs.select(0);self.go('Review')
 
     def review_screen(self):
-        f=self.frames['Review'];self.balance=tk.StringVar(value='No generated paper.')
+        page=self.frames['Review']
+        self.review_empty=ttk.Frame(page, style='Panel.TFrame', padding=32)
+        self.review_empty.pack(fill='x', pady=(8, 0))
+        ttk.Label(self.review_empty, text='PAPER STUDIO', style='Badge.TLabel').pack(anchor='w')
+        ttk.Label(self.review_empty, text='A space for your finished paper', style='CardTitle.TLabel').pack(anchor='w', pady=(20, 8))
+        ttk.Label(self.review_empty, text='Review questions, refine your selection and export student and teacher copies here.',
+                  style='CardMuted.TLabel', wraplength=640).pack(anchor='w')
+        for number, title, detail in (
+                ('01', 'Set the blueprint', 'Choose the subject, marks and question selection rows.'),
+                ('02', 'Check & generate', 'Check availability, then generate your balanced paper.'),
+                ('03', 'Review, save & export', 'Keep a saved copy and export separate PDFs.')):
+            step=ttk.Frame(self.review_empty, style='Card.TFrame', padding=(0, 10));step.pack(fill='x',pady=4)
+            ttk.Label(step,text=number,style='Badge.TLabel').pack(side='left',padx=(0,16))
+            ttk.Label(step,text=title,style='CardTitle.TLabel').pack(anchor='w')
+            ttk.Label(step,text=detail,style='CardMuted.TLabel',wraplength=620).pack(anchor='w',pady=(4,0))
+        actions=ttk.Frame(self.review_empty,style='Card.TFrame');actions.pack(fill='x',pady=(16,0))
+        ttk.Button(actions,text='Set up a paper  →',style='Primary.TButton',command=lambda:self.go('Paper setup')).pack(side='left')
+        ttk.Button(actions,text='Open saved papers',style='Link.TButton',command=lambda:self.go('Saved papers')).pack(side='left',padx=12)
+        self.review_content=ttk.Frame(page)
+        f=self.review_content;self.balance=tk.StringVar(value='No generated paper.')
         ttk.Label(f,textvariable=self.balance,wraplength=1000).pack(anchor='w',pady=(0,10))
         self.paper_status=tk.StringVar(value='No paper selected.')
-        ttk.Label(f,textvariable=self.paper_status,wraplength=1000).pack(anchor='w',pady=(0,6))
+        ttk.Label(f,textvariable=self.paper_status,style='Caption.TLabel',wraplength=1000).pack(anchor='w',pady=(0,6))
+        ttk.Label(f,text='SAVE & REFINE',style='Caption.TLabel').pack(anchor='w',pady=(8,6))
         controls=ttk.Frame(f);controls.pack(fill='x',pady=(0,8))
         self.save_button=ttk.Button(controls,text='Save paper',style='Primary.TButton',command=self.save_current,state='disabled');self.save_button.pack(side='left')
         self.revision_button=ttk.Button(controls,text='Create revision',command=self.revise_current,state='disabled');self.revision_button.pack(side='left',padx=6)
@@ -323,7 +354,8 @@ class Application:
         self.question_number=tk.StringVar()
         self.question_combo=ttk.Combobox(controls,textvariable=self.question_number,width=6,state='readonly');self.question_combo.pack(side='left')
         self.replace_button=ttk.Button(controls,text='Replace question',command=self.replace_current,state='disabled');self.replace_button.pack(side='left',padx=6)
-        exports=ttk.Frame(f);exports.pack(fill='x',pady=(0,8))
+        exports=ttk.Frame(f);exports.pack(fill='x',pady=(4,12))
+        ttk.Label(exports,text='EXPORT',style='Caption.TLabel').pack(side='left',padx=(0,12))
         self.student_pdf_button=ttk.Button(exports,text='Export student PDF',command=lambda:self.export_current(False),state='disabled');self.student_pdf_button.pack(side='left')
         self.teacher_pdf_button=ttk.Button(exports,text='Export teacher key PDF',command=lambda:self.export_current(True),state='disabled');self.teacher_pdf_button.pack(side='left',padx=6)
         self.preview_tabs=ttk.Notebook(f);self.preview_tabs.pack(fill='both',expand=True)
@@ -390,56 +422,4 @@ class Application:
             messagebox.showerror('Cannot replace question',str(exc),parent=self.root)
 
     def help_screen(self):
-        f=self.frames['Help']
-        text='''WHAT WORKS NOW
-• Add, edit, search and filter your question bank.
-• Approve questions with a review note; archive or restore.
-• Preview CSV imports and save all valid records as drafts.
-• Inspect model answers and rubrics.
-• Add/edit/reorder blueprint rows and save/load templates.
-• Check exact shortages; generate unique matching questions.
-• Inspect separate student and teacher previews with balance totals.
-• Reopen the app without duplicating or overwriting seeded questions.
-• Replace a question with an unused eligible match; marks and balance stay exact.
-• Save/reopen exact paper snapshots, even after bank edits or archives.
-• Create and save revisions without overwriting their parent papers.
-• Export separate printable A4 student and teacher PDFs.
-• Back up all saved data and restore a validated backup with a recovery copy.
-
-WHAT COMES NEXT
-Windows scaling checks, observed user testing and the submission report.
-
-DIFFICULTY
-Easy / Medium / Hard are estimated labels for a target cohort.
-Percentages refer to marks, not counts. No AI calibration is claimed.
-
-KEYBOARD
-Ctrl+1 Overview, Ctrl+2 Question bank, Ctrl+3 Paper setup.\nCtrl+4 Check & generate, Ctrl+5 Paper studio, Ctrl+6 Saved papers, Ctrl+7 Help.
-Use Tab / Shift+Tab to move through controls.
-
-VERSION
-0.6.1 — Redesigned desktop workspace. ReportLab is needed only for PDF export.
-
-SAVED PAPERS
-Save paper stores the blueprint, ordered questions, answers and marking guidance.
-Saved papers are read-only. Create revision makes an unsaved copy with a parent ID.
-Save the revision to retain it. The original stays unchanged.
-Replacements use the current bank; existing snapshot content is historical.
-The seed describes initial generation, not replacements. Reopen exact saved copies.
-Changing the setup or bank preserves the paper in Paper studio; generating another paper asks before discarding unsaved work.
-
-PDF EXPORT AND BACKUPS
-Export the open paper from Paper studio; history entries can be reopened and exported again.
-Install PDF support once: py -3.12 -m pip install -r requirements.txt
-Exports preserve code indentation. Long code lines use > continuation; tabs display as four spaces.
-Fonts must cover the text. Complex scripts (including Hindi/Arabic) are not supported by this exporter yet.
-Backup includes saved questions/templates/papers and teacher answers, not unsaved edits or exported PDFs.
-Restore replaces data, creates a recovery backup, and closes the app. Reopen to refresh every screen.
-Use a new backup filename each time; existing backup files are never overwritten.
-
-REVIEW AND IMPORT
-New/imported questions are drafts. Editing content resets approval.
-Restore returns an archived question to draft. Demo origin is retained.
-CSV: UTF-8, comma-separated, maximum 1,000 records / 2 MiB.
-A file with any errors is not imported. No rows are overwritten.'''
-        box=ScrolledText(f,height=18,wrap='word',font=('Segoe UI',11));box.pack(fill='both',expand=True);self.set_text(box,text)
+        self.help_panel = HelpPanel(self.frames['Help'], self.go)

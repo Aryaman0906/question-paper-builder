@@ -57,3 +57,23 @@ The redesign changes presentation. It does not change selection rules, saved-pap
 ## 0.6.1 refinement
 
 Mouse-wheel routing and Windows system-DPI startup were added after the user's feedback about scrolling and the quality of the whole window. Larger fonts and themed text-box scrollbars improve consistency. The screenshots above document the initial 0.6.0 design; its layout and palette are retained. Use a fresh Python process to activate the DPI startup change. A final Windows visual check is still required.
+
+
+## 0.6.2 council review and refinements
+
+On 26 October 2026, visual-design and usability reviewers assessed the user's Windows screenshots. Both recommended improving composition within Tkinter before considering a frontend migration. The key weaknesses were text-heavy Help, an inactive-control wall in empty Paper studio, competing actions, long timestamps and excessive dashboard height.
+
+The implemented pass adds a seven-topic Help centre, navigation-only guidance buttons, a Paper studio starting card, grouped generation settings, quiet secondary actions, compact number inputs, readable UTC dates and a selected-paper detail panel. Recently saved work now precedes the workflow cards. The original palette and native keyboard controls remain.
+
+Research used:
+
+- [Microsoft: Content layout and spacing](https://learn.microsoft.com/en-us/windows/apps/design/basics/content-basics) — consistent spacing, typographic hierarchy and related control groups.
+- [Nielsen Norman Group: Ten usability heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/) — familiar wording, reduced visual clutter and findable task-focused help.
+
+These are design principles, not evidence that this app will improve retention. That needs observation of real users. No new language or GUI framework was introduced; the user's approval would be requested before such a migration.
+
+Version 0.6.2 keeps generation, saving, revision, PDF export and backup services unchanged. Help actions only select an existing page. Readable dates are display-only; raw timestamps and identifiers remain in storage.
+
+Actual 0.6.2 Help centre (Linux/Tk 8.6, not a mockup):
+
+![Help centre](images/help-centre.png)
