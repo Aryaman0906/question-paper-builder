@@ -52,3 +52,8 @@ Automated evidence is in [TEST_RESULTS.md](TEST_RESULTS.md). Before submission, 
 - [ ] Observe a teacher completing a paper and record any confusing labels or steps before collecting satisfaction feedback.
 
 The redesign changes presentation. It does not change selection rules, saved-paper immutability, PDF formatting, backup safeguards or demo eligibility.
+
+
+## 0.6.1 refinement
+
+Mouse-wheel routing and Windows system-DPI startup were added after the user's feedback about scrolling and the quality of the whole window. Larger fonts and themed text-box scrollbars improve consistency. The screenshots above document the initial 0.6.0 design; its layout and palette are retained. Use a fresh Python process to activate the DPI startup change. A final Windows visual check is still required.

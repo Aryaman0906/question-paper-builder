@@ -3,7 +3,7 @@ import tkinter as tk
 import sqlite3
 from tkinter import ttk, messagebox, filedialog, font
 from pathlib import Path
-from .ui import ScrolledText, ScrollPage, setup_theme, decorate_text, NAV, BG
+from .ui import ScrolledText, ScrollPage, setup_theme, size_main_window, decorate_text, NAV, BG
 from .blueprints import list_blueprints
 from .papers import list_papers
 from . import __version__
@@ -25,10 +25,10 @@ class Application:
         self.paper = None
         self.paper_saved = False
         root.title('Question Paper Builder | Workspace ' + __version__)
-        root.geometry('1280x850'); root.minsize(960, 680)
+        size_main_window(root)
         self.font_family = setup_theme(root)
         shell = ttk.Frame(root); shell.pack(fill='both', expand=True)
-        sidebar_width = max(204, font.Font(family=self.font_family,size=10,weight='bold').measure('04   Check & generate') + 64)
+        sidebar_width = max(204, font.Font(family=self.font_family,size=11,weight='bold').measure('04   Check & generate') + 64)
         sidebar = tk.Frame(shell, background=NAV, width=sidebar_width)
         sidebar.pack(side='left', fill='y'); sidebar.pack_propagate(False)
         self.sidebar_page = ScrollPage(sidebar)
@@ -418,7 +418,7 @@ Ctrl+1 Overview, Ctrl+2 Question bank, Ctrl+3 Paper setup.\nCtrl+4 Check & gener
 Use Tab / Shift+Tab to move through controls.
 
 VERSION
-0.6.0 — Redesigned desktop workspace. ReportLab is needed only for PDF export.
+0.6.1 — Redesigned desktop workspace. ReportLab is needed only for PDF export.
 
 SAVED PAPERS
 Save paper stores the blueprint, ordered questions, answers and marking guidance.

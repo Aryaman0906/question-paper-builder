@@ -1,6 +1,6 @@
 # Question Paper Builder
 
-**Version 0.6.0 — Redesigned desktop workspace**
+**Version 0.6.1 — Window rendering and mouse-wheel fixes**
 
 Aryaman Kundra · Roll number 2445591  
 Assigned project: Question Paper Generation & Difficulty Balancing System
@@ -9,7 +9,17 @@ The desktop interface now has a dark navigation sidebar, an indigo and white the
 
 ![Workspace overview](docs/images/workspace.png)
 
-## GUI update (0.6.0)
+## Rendering and scrolling fixes (0.6.1)
+
+- Mouse-wheel scrolling works over page backgrounds, cards, labels and sidebar items. Text fields and tables scroll first; reaching their edge passes scrolling to the containing page.
+- Shift+wheel scrolls horizontally. Small Windows wheel/trackpad deltas accumulate. Closed dropdown values are not changed by scrolling past them.
+- Windows DPI awareness is configured **before creating the first window**, so an unaware process need not have its whole interface bitmap-stretched. This affects the window and controls as well as text.
+- Window dimensions respect system DPI and screen size. UI/body/code fonts are 11 points, table headings are clearer, and text boxes now use matching ttk scrollbars.
+- The colour palette, layout and all data workflows are preserved. No new dependency is required.
+
+Fully close the old app and start the updated `main.py` in a fresh Python process. Check for **0.6.1** in the title bar. This release uses system-DPI awareness for Tk 8.6 compatibility; it does not implement dynamic per-monitor DPI changes. Moving between monitors with different scaling can still be affected by Windows scaling. Existing host/IDE DPI settings are respected. Native Windows sharpness remains to be checked on the user's device.
+
+## GUI design (introduced in 0.6.0)
 
 - Navigate with the sidebar or Ctrl+1 through Ctrl+7. **Availability** is now **Check & generate**; **Review** is now **Paper studio**.
 - See real counts for active questions, approved non-demo questions, blueprint templates and saved papers. Open recently saved papers from the overview.
@@ -18,11 +28,11 @@ The desktop interface now has a dark navigation sidebar, an indigo and white the
 - Pages expose overflow scrollbars when needed. Dashboard cards reflow on smaller windows; question editor tabs scroll and replacement/import controls remain visible with enlarged text.
 - **Backup / restore** is at the bottom of the sidebar.
 
-Close the old app, download/extract the latest code, then run `py -3.12 main.py` from the updated folder. The title bar should show **0.6.0**. No new dependency or database migration is required for this GUI update; the existing database path is retained. See [the design notes and screenshots](docs/GUI_REDESIGN.md).
+Close the old app, download/extract the latest code, then run `py -3.12 main.py` from the updated folder. The title bar should show **0.6.1**. No new dependency or database migration is required for this GUI update; the existing database path is retained. See [the design notes and screenshots](docs/GUI_REDESIGN.md).
 
 ## Windows saving fix (0.5.1)
 
-Version 0.5.0 could fail both PDF export and database backup with `[Errno 9] Bad file descriptor` on Windows. The shared output helper flushed a read-only file handle. Version 0.5.1 opens it read/write without truncating the finished output. This also fixes the recovery-copy step used during restore. Download the updated code and restart the app; no database migration or dependency reinstall is required. This fix is retained in 0.6.0.
+Version 0.5.0 could fail both PDF export and database backup with `[Errno 9] Bad file descriptor` on Windows. The shared output helper flushed a read-only file handle. Version 0.5.1 opens it read/write without truncating the finished output. This also fixes the recovery-copy step used during restore. Download the updated code and restart the app; no database migration or dependency reinstall is required. This fix is retained in 0.6.1.
 
 Seven new regression tests cover writable flushing, both PDF exports, database backup/restore recovery and failure cleanup. The prior Linux-only tests missed Windows' write-access requirement. The new tests enforce that requirement on Linux; the user subsequently reported that saving works. A complete Windows restore/scaling acceptance pass is still pending.
 
@@ -154,7 +164,7 @@ py -3.12 main.py --db .\practice.sqlite3
 
 `--check` validates the example blueprint. `--generate-demo` prints a complete demo snapshot as JSON, including teacher answers; it is not a student export. These modes are mutually exclusive. Exit codes: 0 success, 1 availability failure, 2 invalid input or startup/database/display error.
 
-**177 automated tests passed** on Python 3.12.3 with Tk 8.6 under a Linux virtual display, ReportLab 4.4.9 and PDF verification dependencies installed. This includes the prior 171 service/controller checks and six real Tk integration tests. Screens were rendered and inspected at normal and enlarged Tk text scaling; a 960×680 window was also checked. The earlier headless suite also passed on Python 3.12.14.
+**189 automated tests passed** on Python 3.12.3 with Tk 8.6 under a Linux virtual display, ReportLab 4.4.9 and PDF verification dependencies installed. This includes the prior 171 service/controller checks six workspace integration tests, six additional wheel-dispatch tests and six mocked Windows DPI/startup tests. Screens were rendered and inspected at normal and enlarged Tk text scaling; a 960×680 window was also checked. The earlier headless suite also passed on Python 3.12.14.
 
 The user confirmed the main Phase 3/4 workflows and reported that Phase 5 saving works on Windows. The new design has been visually tested on Linux, not on Windows. Windows native dialogs, 125%/150% display scaling, printing and restore interaction still need a final manual pass. User satisfaction has not been formally measured. GUI tests skip without a display; PDF checks need the development dependencies. See `docs/TEST_RESULTS.md` for scope and evidence.
 

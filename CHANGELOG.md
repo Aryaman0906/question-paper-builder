@@ -1,5 +1,14 @@
 # Project updates
 
+## 0.6.1 — Whole-window rendering and wheel scrolling (26 October 2026)
+
+- Fix missing wheel handling on scrollable pages and the sidebar. Route one event to the nearest scrollable control beneath the pointer; continue into its containing page at the edge.
+- Support Shift+wheel, Linux button-wheel events, fractional Windows deltas and controls created in later dialogs; avoid changing closed dropdown values or scrolling behind a modal dialog.
+- Configure Windows system-DPI awareness before Tk creates a window, with fallbacks and respect for host-configured awareness. This targets whole-window bitmap scaling, not only fonts.
+- Scale initial window dimensions, use 11-point UI/body/code fonts and replace classic text-box scrollbars with matching ttk controls.
+- Preserve the accepted layout, palette, database and all existing service behavior.
+- 189 tests pass on Linux/Tk 8.6. Windows APIs are mocked in tests; actual Windows visual quality and mixed-DPI monitor behavior are not certified.
+
 ## 0.6.0 — Desktop GUI redesign
 
 - Add a dark sidebar, live overview counts, recent-paper shortcuts and consistent native ttk styles.

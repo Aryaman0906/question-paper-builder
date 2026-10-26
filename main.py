@@ -5,10 +5,11 @@ import sqlite3
 from pathlib import Path
 from paperbuilder.storage import Repository, default_database_path, demo_blueprint
 from paperbuilder.validation import availability
+from paperbuilder.display import enable_windows_dpi_awareness
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Question Paper Builder 0.6.0 desktop workspace')
+    parser = argparse.ArgumentParser(description='Question Paper Builder 0.6.1 desktop workspace')
     parser.add_argument('--db', type=Path, help='Optional demo database location')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--generate-demo', action='store_true', help='Generate a checked demo paper as JSON without opening a window')
@@ -33,6 +34,7 @@ def main():
             report = availability(demo_blueprint(), repo.questions(), include_demo=True)
             print(json.dumps(report, indent=2))
             return 0 if report['valid'] else 1
+        enable_windows_dpi_awareness()
         from paperbuilder.gui import Application
         import tkinter as tk
         try:

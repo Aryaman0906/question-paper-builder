@@ -1,3 +1,23 @@
+# 0.6.1 rendering and input fixes
+
+Date: 26 October 2026. **189 tests passed, zero skipped**, Python 3.12.3 / Tk 8.6 on Linux with a virtual X display and the existing PDF dependencies.
+
+The previous 177 checks remain passing. Twelve new tests cover:
+
+- Real Tk wheel dispatch over labels/page areas, Shift+wheel, nested text fields and tables without double scrolling, edge hand-off to the parent page, fractional Windows-style deltas, Linux button-wheel events, dropdown value preservation and later-created modal dialogs.
+- Mocked Windows DPI APIs: modern context, respecting a configured host, older API fallback, missing API fallback and startup ordering before `Tk()`.
+
+Rendered overview, bank, setup and paper previews at 96 and 144 DPI-equivalent Tk scaling. Checked larger font layout and the replacement ttk scrollbars. These renders do not prove Windows raster quality. The user's original whole-window quality concern has not been measured on their hardware. Windows system-DPI awareness targets bitmap scaling; mixed-DPI monitor transitions are not implemented as per-monitor-aware layout changes.
+
+Manual Windows retest: fully close the previous Python process, launch 0.6.1, scroll over cards/labels/sidebar, scroll inside a question table and teacher key, use Shift+wheel on wide content, and inspect the entire window at the usual display scaling. Confirm dropdowns retain their values while scrolling. No OS-wide font, ClearType or display preferences are changed.
+
+References for the Windows startup contract:
+
+- https://learn.microsoft.com/en-us/windows/win32/hidpi/setting-the-default-dpi-awareness-for-a-process
+- https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiawarenesscontext
+
+---
+
 # 0.6.0 GUI verification record
 
 Date: 25 October 2026. Full suite: **177 tests passed, zero skipped**, Python 3.12.3 / Tk 8.6 on Linux with a virtual X display, ReportLab 4.4.9 and development dependencies. The existing 171 headless checks also passed on Python 3.12.14 before adding the display tests.

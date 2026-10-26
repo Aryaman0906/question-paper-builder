@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, font
 from tkinter.scrolledtext import ScrolledText as TkScrolledText
+from .scrolling import install_wheel_scrolling
 
 
 BG = '#F4F5FA'
@@ -14,13 +15,24 @@ NAV = '#171E35'
 SOFT = '#EEEAFB'
 
 
+def size_main_window(root):
+    """Use DPI-scaled dimensions, leaving screen space for window borders."""
+    scale = max(1.0, root.winfo_fpixels('1i') / 96)
+    width = min(round(1280 * scale), max(640, root.winfo_screenwidth() - 40))
+    height = min(round(850 * scale), max(480, root.winfo_screenheight() - round(80 * scale)))
+    root.geometry(f'{width}x{height}')
+    root.minsize(min(width, round(960 * scale)), min(height, round(680 * scale)))
+
+
 def setup_theme(root):
     available = set(font.families(root))
-    family = 'Segoe UI' if 'Segoe UI' in available else 'DejaVu Sans'
-    mono = 'Consolas' if 'Consolas' in available else 'DejaVu Sans Mono'
+    family = next((name for name in ('Segoe UI', 'DejaVu Sans', 'Helvetica', 'Arial') if name in available),
+                  font.nametofont('TkDefaultFont').actual('family'))
+    mono = next((name for name in ('Consolas', 'DejaVu Sans Mono', 'Menlo', 'Courier') if name in available),
+                font.nametofont('TkFixedFont').actual('family'))
     for name in ('TkDefaultFont', 'TkTextFont', 'TkMenuFont', 'TkHeadingFont'):
-        font.nametofont(name).configure(family=family, size=10)
-    font.nametofont('TkFixedFont').configure(family=mono, size=10)
+        font.nametofont(name).configure(family=family, size=11)
+    font.nametofont('TkFixedFont').configure(family=mono, size=11)
     root.configure(background=BG)
     style = ttk.Style(root)
     style.theme_use('clam')
@@ -44,7 +56,7 @@ def setup_theme(root):
     style.map('TButton', background=[('disabled', '#EBEDF3'), ('pressed', '#E2DDF7'), ('active', SOFT)],
               foreground=[('disabled', '#7C8395')], bordercolor=[('focus', ACCENT)])
     style.configure('Primary.TButton', background=ACCENT, foreground=SURFACE, bordercolor=ACCENT,
-                    font=(family, 10, 'bold'), focuscolor=SURFACE)
+                    font=(family, 11, 'bold'), focuscolor=SURFACE)
     style.map('Primary.TButton', background=[('disabled', '#E4E0F1'), ('pressed', '#413298'), ('active', '#4D3DAC')],
               foreground=[('disabled', '#777089'), ('!disabled', SURFACE)])
     style.configure('Danger.TButton', foreground='#A02E37')
@@ -52,7 +64,7 @@ def setup_theme(root):
                     borderwidth=0, padding=(16, 13), focuscolor='#C4B9FF')
     style.map('Nav.TButton', background=[('active', '#252E4C'), ('pressed', '#303958')],
               foreground=[('active', SURFACE)])
-    style.configure('Active.Nav.TButton', background='#373259', foreground=SURFACE, font=(family, 10, 'bold'))
+    style.configure('Active.Nav.TButton', background='#373259', foreground=SURFACE, font=(family, 11, 'bold'))
     style.map('Active.Nav.TButton', background=[('active', '#443B70'), ('!active', '#373259')])
     style.configure('TEntry', padding=(8, 6), fieldbackground=SURFACE, insertcolor=INK)
     style.configure('TCombobox', padding=(8, 6), fieldbackground=SURFACE, arrowsize=14)
@@ -74,7 +86,7 @@ def setup_theme(root):
     style.configure('Treeview', background=SURFACE, fieldbackground=SURFACE, foreground=INK,
                     rowheight=font.nametofont('TkDefaultFont').metrics('linespace') + 16, borderwidth=0)
     style.configure('Treeview.Heading', background='#EDEFF6', foreground=MUTED,
-                    font=(family, 9, 'bold'), padding=(10, 10), relief='flat')
+                    font=(family, 10, 'bold'), padding=(10, 10), relief='flat')
     style.map('Treeview', background=[('selected', SOFT)], foreground=[('selected', '#3F308F')])
     style.map('Treeview.Heading', background=[('active', '#E1DDF3')])
     style.configure('TScrollbar', background='#CBD0DF', troughcolor=BG, borderwidth=0, arrowsize=12)
@@ -83,6 +95,7 @@ def setup_theme(root):
     root.option_add('*TCombobox*Listbox.foreground', INK)
     root.option_add('*TCombobox*Listbox.selectBackground', SOFT)
     root.option_add('*TCombobox*Listbox.selectForeground', INK)
+    install_wheel_scrolling(root)
     return family
 
 
@@ -98,9 +111,11 @@ class ScrolledText(TkScrolledText):
                         font='TkFixedFont' if monospace else 'TkTextFont')
         defaults.update(kwargs)
         super().__init__(master, **defaults)
-        # ScrolledText otherwise ships a grey classic scrollbar.
-        self.vbar.configure(background=BG, troughcolor=BG, activebackground=LINE,
-                            relief='flat', borderwidth=0, highlightthickness=0, width=12)
+        # Use the same themed scrollbar as tables and pages, including hover.
+        self.vbar.destroy()
+        self.vbar = ttk.Scrollbar(self.frame, orient='vertical', command=self.yview)
+        self.vbar.pack(side='right', fill='y', before=self._w)
+        self.configure(yscrollcommand=self.vbar.set)
 
 
 def stripe_tree(tree):
@@ -113,14 +128,17 @@ def stripe_tree(tree):
 class ScrollPage(ttk.Frame):
     """Expand on large screens; expose overflow at small sizes / higher DPI.
 
-    Nested tables and text keep their own scrolling. Outer scrollbars and
-    automatic focus visibility keep form controls reachable without global
-    mouse-wheel bindings that would steal text/combobox events.
+    Nested tables/text scroll first; the wheel continues into the containing
+    page at their boundary. Focus visibility also keeps form controls reachable.
     """
     def __init__(self, parent):
         super().__init__(parent)
         self.canvas = tk.Canvas(self, background=BG, borderwidth=0, highlightthickness=0,
-                                width=1, height=1)
+                                width=1, height=1,
+                                xscrollincrement=max(12, round(self.winfo_fpixels('12p'))),
+                                yscrollincrement=max(12, round(self.winfo_fpixels('12p'))))
+        self.wheel_target = self.canvas
+        self.canvas.wheel_target = self.canvas
         self.body = ttk.Frame(self.canvas, padding=(2, 2, 16, 14))
         self.window = self.canvas.create_window(0, 0, window=self.body, anchor='nw')
         self.ybar = ttk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
